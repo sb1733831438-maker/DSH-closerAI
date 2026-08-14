@@ -34,7 +34,12 @@ describe('normalizeProviderProfile', () => {
 
   it('rejects an invalid scheme', () => {
     expect(() =>
-      normalizeProviderProfile({ id: 'x', kind: 'mock', baseUrl: 'ftp://x', models: [{ id: 'm' }] }),
+      normalizeProviderProfile({
+        id: 'x',
+        kind: 'mock',
+        baseUrl: 'ftp://x',
+        models: [{ id: 'm' }],
+      }),
     ).toThrow(/http/)
   })
 

@@ -1,27 +1,12 @@
-export type ProviderKind = 'deepseek' | 'openai-compatible' | 'mock'
+import type {
+  ConnectivityResult,
+  ModelEntry,
+  ProviderKind,
+  ProviderProfile,
+  ProviderStore,
+} from '../shared/types.js'
 
-export interface ModelEntry {
-  id: string
-  name?: string
-  contextWindow?: number
-}
-
-export interface ProviderProfile {
-  /** Stable local id; the API key is stored separately in the OS keychain. */
-  id: string
-  kind: ProviderKind
-  /** Display name, e.g. "DeepSeek" or "My local gateway". */
-  name: string
-  /** Full endpoint prefix including /v1, e.g. https://api.deepseek.com/v1. */
-  baseUrl: string
-  defaultModel: string
-  models: ModelEntry[]
-}
-
-export interface ProviderStore {
-  activeProviderId: string | null
-  providers: ProviderProfile[]
-}
+export type { ConnectivityResult, ModelEntry, ProviderKind, ProviderProfile, ProviderStore }
 
 export const DEEPSEEK_DEFAULT: ProviderProfile = Object.freeze({
   id: 'deepseek-official',
@@ -38,17 +23,11 @@ export const DEEPSEEK_DEFAULT: ProviderProfile = Object.freeze({
 export const MOCK_DEFAULT: ProviderProfile = Object.freeze({
   id: 'mock',
   kind: 'mock',
-  name: 'Mock (offline)',
+  name: 'Mock（离线）',
   baseUrl: 'http://127.0.0.1:0/v1',
   defaultModel: 'mock-model',
-  models: [{ id: 'mock-model', name: 'Mock model', contextWindow: 128_000 }],
+  models: [{ id: 'mock-model', name: 'Mock 模型', contextWindow: 128_000 }],
 })
-
-export interface ConnectivityResult {
-  ok: boolean
-  status?: number
-  error?: string
-}
 
 function normalizeBaseUrl(raw: string): string {
   const trimmed = raw.trim().replace(/\/+$/, '')

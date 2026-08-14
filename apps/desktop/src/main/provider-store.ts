@@ -15,7 +15,8 @@ export class ProviderStoreFile {
   read(): ProviderStore {
     try {
       const parsed: unknown = JSON.parse(readFileSync(this.filePath, 'utf8'))
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return { ...EMPTY_STORE }
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
+        return { ...EMPTY_STORE }
       const store = parsed as Partial<ProviderStore>
       const providers = Array.isArray(store.providers) ? store.providers : []
       const activeProviderId =
