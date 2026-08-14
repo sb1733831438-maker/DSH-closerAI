@@ -11,14 +11,26 @@ import {
 const here = dirname(fileURLToPath(import.meta.url))
 const preloadPath = join(here, '..', 'preload', 'index.cjs')
 
+export type WindowTarget = { kind: 'url'; url: string } | { kind: 'file'; path: string }
+
+function targetOrigin(target: WindowTarget): string | null {
+  if (target.kind === 'url') {
+    try {
+      return new URL(target.url).origin
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
 /**
- * Create the single hardened BrowserWindow and load the DSH web UI.
- *
- * Security posture: strict CSP on every response, navigation locked to the DSH
- * origin, new windows denied (external https/http links open in the system
- * browser), and every permission request (mic/camera/etc.) denied.
+ * Create the single hardened BrowserWindow. Security posture: strict CSP on
+ * every HTTP response, navigation locked to the target origin (file targets
+ * allow no navigation at all), new windows denied with external http/https
+ * links opened in the system browser, and every permission request denied.
  */
-export function createMainWindow(dshUrl: string): BrowserWindow {
+export function createWindow(target: WindowTarget): BrowserWindow {
   const window = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -38,8 +50,10 @@ export function createMainWindow(dshUrl: string): BrowserWindow {
     })
   })
 
+  const origin = targetOrigin(target)
   window.webContents.on('will-navigate', (event, url) => {
-    if (!isAllowedInternalNavigation(url, dshUrl)) {
+    const allowed = origin !== null && isAllowedInternalNavigation(url, origin)
+    if (!allowed) {
       event.preventDefault()
       if (externalNavigationAction(url) === 'open') void shell.openExternal(url)
     }
@@ -55,6 +69,7 @@ export function createMainWindow(dshUrl: string): BrowserWindow {
   })
 
   window.once('ready-to-show', () => window.show())
-  void window.loadURL(dshUrl)
+  if (target.kind === 'url') void window.loadURL(target.url)
+  else void window.loadFile(target.path)
   return window
 }

@@ -14,18 +14,28 @@ export interface RunningDsh {
   url: string
 }
 
+export interface StartDshOptions {
+  /** Provider API key injected as DEEPSEEK_API_KEY; never written to disk. */
+  apiKey?: string
+}
+
 /**
  * Start the supervised DSH child on a random loopback port and wait until its
  * web UI is ready. The child is spawned as `node <bundled dsh bin> web`, with
- * no shell, so Windows `.cmd` shims are never involved.
+ * no shell, so Windows `.cmd` shims are never involved. The API key is passed
+ * through the launching environment, where the credentials seam reads it with
+ * the highest precedence and no file ever materializes it.
  */
-export async function startDsh(home: string): Promise<RunningDsh> {
+export async function startDsh(home: string, options: StartDshOptions = {}): Promise<RunningDsh> {
   const env: Record<string, string> = {}
   // Inside Electron, process.execPath is electron.exe. ELECTRON_RUN_AS_NODE
   // makes it behave as plain Node.js so the child runs dsh-bin.js as a script
   // rather than booting a second Electron application.
   if (process.versions.electron !== undefined) {
     env.ELECTRON_RUN_AS_NODE = '1'
+  }
+  if (options.apiKey !== undefined && options.apiKey.length > 0) {
+    env.DEEPSEEK_API_KEY = options.apiKey
   }
 
   const supervisor = new DshSupervisor({

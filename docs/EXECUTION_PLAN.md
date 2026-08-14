@@ -25,11 +25,11 @@ and test evidence.
 
 ## v0.0.3 — Onboarding and Providers
 
-- [ ] First-run onboarding
-- [ ] OS keychain secret storage
-- [ ] DeepSeek + generic OpenAI-compatible provider configuration
-- [ ] Model selection, connectivity test, clear error messages
-- [ ] Mock mode (no API key)
+- [x] First-run onboarding
+- [x] OS keychain secret storage
+- [x] DeepSeek + generic OpenAI-compatible provider configuration
+- [x] Model selection, connectivity test, clear error messages
+- [x] Mock mode (no API key)
 
 ## v0.0.4 — Chat / Work / Code Profiles
 
