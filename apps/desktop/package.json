@@ -15,10 +15,13 @@
     "smoke": "electron . --smoke-test"
   },
   "dependencies": {
+    "@closerai/mock-provider": "workspace:*",
     "@closerai/supervisor": "workspace:*",
-    "@deepseek-ai/dsh": "0.1.0-rc.6"
+    "@deepseek-ai/dsh": "0.1.0-rc.6",
+    "js-yaml": "4.2.0"
   },
   "devDependencies": {
+    "@types/js-yaml": "4.0.9",
     "@types/node": "22.20.1",
     "electron": "43.4.0",
     "typescript": "5.9.3",
