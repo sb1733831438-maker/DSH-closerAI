@@ -13,7 +13,7 @@ and test evidence.
 - [x] Deterministic mock provider with unit tests
 - [x] GitHub Actions CI (format / lint / typecheck / build / test on 3 OS)
 - [x] Pin `@deepseek-ai/dsh` exact version (0.1.0-rc.6)
-- [ ] Push to GitHub and create v0.0.1 tag + Release
+- [x] Push to GitHub and create v0.0.1 tag + Release
 
 ## v0.0.2 — Desktop Shell
 

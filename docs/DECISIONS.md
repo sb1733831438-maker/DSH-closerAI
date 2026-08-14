@@ -56,3 +56,14 @@ disabled.
 **Why:** No global identity or signing key exists in this environment. The email routes to
 the owner's GitHub account without exposing a real address. **Revisit:** replace with the
 maintainer's real name/email and enable signing if desired.
+
+## D-007 — Repository name and first-version branch policy
+
+**Decision:** The public repository is `sb1733831438-maker/DSH-closerAI`, matching the local
+directory name and the product's "CloserAI" identity. v0.0.1 was built directly on `main`
+because the repository had no prior `main` to diverge from; from v0.0.2 onward every minor
+version gets a `release/v0.0.x-<short-name>` branch merged back into `main`.
+
+**Why:** The directory name reflects the user's chosen identity. Bootstrap work on `main` is
+safe only when the repository is empty; the release-branch rule applies once a stable `main`
+exists to protect.
