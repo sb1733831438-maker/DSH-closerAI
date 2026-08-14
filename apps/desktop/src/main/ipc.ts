@@ -7,12 +7,15 @@ import {
 } from './providers.js'
 import type { ProviderStoreFile } from './provider-store.js'
 import type { SecretStore } from './secrets.js'
+import type { AppConfigStore } from './mode-store.js'
+import type { AppConfig } from '../shared/types.js'
 import { IPC, type SaveProviderInput, type TestProviderInput } from '../shared/ipc.js'
 
 export interface IpcDeps {
   providerStore: ProviderStoreFile
   secretStore: SecretStore
-  /** Called when onboarding completes; restarts DSH and loads its UI. */
+  configStore: AppConfigStore
+  /** Called when onboarding completes or the mode changes; restarts DSH. */
   onComplete: () => void
 }
 
@@ -45,6 +48,14 @@ export function registerIpcHandlers(deps: IpcDeps): void {
   })
 
   ipcMain.handle(IPC.onboardingComplete, () => {
+    deps.onComplete()
+    return { ok: true }
+  })
+
+  ipcMain.handle(IPC.modeGet, () => deps.configStore.read())
+
+  ipcMain.handle(IPC.modeSet, (_event, config: AppConfig) => {
+    deps.configStore.write(config)
     deps.onComplete()
     return { ok: true }
   })

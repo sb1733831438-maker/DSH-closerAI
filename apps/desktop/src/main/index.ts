@@ -4,6 +4,7 @@ import { app, type BrowserWindow } from 'electron'
 import { launchBackend, type RunningBackend } from './backend.js'
 import { DEEP_LINK_SCHEME, parseDeepLink } from './deep-link.js'
 import { registerIpcHandlers } from './ipc.js'
+import { AppConfigStore } from './mode-store.js'
 import { MOCK_DEFAULT } from './providers.js'
 import { ProviderStoreFile } from './provider-store.js'
 import { createSafeStorageCipher } from './safe-storage-cipher.js'
@@ -21,6 +22,7 @@ function main(): void {
 
   const userData = app.getPath('userData')
   const providerStore = new ProviderStoreFile(join(userData, 'providers.json'))
+  const configStore = new AppConfigStore(join(userData, 'app-config.json'))
   const dshHome = join(userData, 'dsh-home')
   let secretStore: SecretStore | null = null
 
@@ -30,6 +32,12 @@ function main(): void {
       secretStore = new SecretStore(join(userData, 'secrets.bin'), createSafeStorageCipher())
     }
     return secretStore
+  }
+
+  const workspaceDirFor = (): string => {
+    const config = configStore.read()
+    if (config.mode === 'code' && config.workspaceDir !== null) return config.workspaceDir
+    return join(userData, config.mode === 'work' ? 'work-sandbox' : 'workspace')
   }
 
   const focusWindow = (): void => {
@@ -69,8 +77,15 @@ function main(): void {
       return
     }
     const apiKey = getSecretStore().get(profile.id) ?? ''
+    const mode = configStore.read().mode
     await stopBackend()
-    const running = await launchBackend(dshHome, profile, apiKey)
+    const running = await launchBackend({
+      home: dshHome,
+      profile,
+      apiKey,
+      mode,
+      workspaceDir: workspaceDirFor(),
+    })
     backend = running
 
     running.dsh.supervisor.on('ready', (status) => {
@@ -109,6 +124,7 @@ function main(): void {
     registerIpcHandlers({
       providerStore,
       secretStore: getSecretStore(),
+      configStore,
       onComplete: () => {
         void startBackendForActiveProfile()
       },

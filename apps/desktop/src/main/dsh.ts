@@ -17,6 +17,8 @@ export interface RunningDsh {
 export interface StartDshOptions {
   /** Provider API key injected as DEEPSEEK_API_KEY; never written to disk. */
   apiKey?: string
+  /** Working directory for the DSH child (also the session workspace root). */
+  cwd?: string
 }
 
 /**
@@ -47,6 +49,7 @@ export async function startDsh(home: string, options: StartDshOptions = {}): Pro
     host: '127.0.0.1',
     port: 0,
     home,
+    cwd: options.cwd,
     env,
     startupTimeoutMs: 60_000,
   })

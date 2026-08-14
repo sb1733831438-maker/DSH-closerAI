@@ -1,0 +1,3 @@
+name: Code
+description: 在用户明确授权的目录内使用文件、Shell、Git、终端、计划与子代理，高风险操作需审批。
+order: 3

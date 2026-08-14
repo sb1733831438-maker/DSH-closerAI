@@ -1,5 +1,8 @@
 export type ProviderKind = 'deepseek' | 'openai-compatible' | 'mock'
 
+/** The three permission-isolated working modes. */
+export type Mode = 'chat' | 'work' | 'code'
+
 export interface ModelEntry {
   id: string
   name?: string
@@ -27,4 +30,10 @@ export interface ConnectivityResult {
   ok: boolean
   status?: number
   error?: string
+}
+
+export interface AppConfig {
+  mode: Mode
+  /** The authorized directory for Code mode; null until the user picks one. */
+  workspaceDir: string | null
 }

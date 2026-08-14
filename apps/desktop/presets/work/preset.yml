@@ -1,0 +1,3 @@
+name: Work
+description: 在应用私有沙箱内处理文档并生成可导出成果，无 Shell 访问。
+order: 2
