@@ -7,8 +7,8 @@
   "type": "module",
   "main": "dist/main/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && node scripts/copy-preload.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-preload.mjs && vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.renderer.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "start": "electron .",
@@ -23,8 +23,14 @@
   "devDependencies": {
     "@types/js-yaml": "4.0.9",
     "@types/node": "22.20.1",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.1.1",
     "electron": "43.4.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "typescript": "5.9.3",
+    "vite": "7.2.7",
     "vitest": "3.2.7"
   }
 }
