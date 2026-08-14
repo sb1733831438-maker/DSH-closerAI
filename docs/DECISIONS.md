@@ -123,3 +123,16 @@ a custom `baseURL` and model catalog rather than shipping a separate adapter.
 **Why:** DSH's `dsh-llm-deepseek` adapter speaks the OpenAI chat-completions protocol and accepts
 an arbitrary `baseURL`, so it already covers any OpenAI-compatible endpoint. Reusing it avoids a
 second adapter to maintain while still satisfying "model-agnostic" configuration.
+
+## D-013 — Modes are agent presets + child working directory
+
+**Decision:** Chat/Work/Code isolation is implemented as three DSH agent presets (tool-set
+differences: Chat has no shell/fs, Work has fs without shell, Code has the full set) plus the DSH
+child's working directory, which becomes the sandbox workspace root. The active mode selects the
+default preset and the child cwd.
+
+**Why:** DSH enforces the workspace-write filesystem fence against the session workspace root
+(derived from the child cwd / session cwd), so pointing the DSH child at the app sandbox or the
+authorized directory gives real containment rather than prompt-level restriction. The preset
+tool-set is the capability surface, which the goal requires to be a profile combination, not
+wording alone.
