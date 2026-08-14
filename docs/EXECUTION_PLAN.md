@@ -33,10 +33,11 @@ and test evidence.
 
 ## v0.0.4 — Chat / Work / Code Profiles
 
-- [ ] Three permission-isolated modes as DSH agent presets
-- [ ] Chat: no directory, no shell, web + attachments
-- [ ] Work: app-private sandbox, document preview/export
-- [ ] Code: explicitly authorized directory, shell/git/terminal/approval
+- [x] Three permission-isolated modes as DSH agent presets
+- [x] Chat: no directory, no shell, web + attachments
+- [x] Work: app-private sandbox, document processing, no shell
+- [x] Code: authorized directory, shell/git/terminal/approval
+- [x] Mode routing (default preset + child working directory) on switch
 
 ## v0.0.5 — Daily Conversation
 

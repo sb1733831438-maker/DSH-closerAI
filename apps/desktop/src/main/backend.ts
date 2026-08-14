@@ -1,31 +1,35 @@
+import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { startMockServer, type MockServer } from '@closerai/mock-provider'
-import { writeDshProviderSettings } from './dsh-settings.js'
+import type { Mode, ProviderProfile } from '../shared/types.js'
+import { writeDshAgentPresetDefault, writeDshProviderSettings } from './dsh-settings.js'
 import { startDsh, type RunningDsh } from './dsh.js'
-import type { ProviderProfile } from './providers.js'
+import { installPresets } from './presets.js'
 
 export interface RunningBackend {
   dsh: RunningDsh
   mockServer: MockServer | null
   /** The profile actually applied (mock gets a concrete local baseUrl). */
   profile: ProviderProfile
+  mode: Mode
+}
+
+export interface LaunchBackendOptions {
+  home: string
+  profile: ProviderProfile
+  apiKey: string
+  mode: Mode
+  /** Workspace root for the mode: app sandbox (work) or authorized dir (code). */
+  workspaceDir: string
 }
 
 /**
- * Bring up the provider backend for one profile and then boot DSH against it.
- *
- * - Mock: starts the local OpenAI-compatible mock server and points the
- *   profile at its loopback URL.
- * - DeepSeek / OpenAI-compatible: uses the profile's baseUrl directly.
- *
- * The endpoint + model catalog land in DSH's settings.yaml; the API key is
- * injected into the DSH child environment only.
+ * Bring up the provider backend for one profile, install the Chat/Work/Code
+ * agent presets, select the active preset, and boot DSH against the chosen
+ * workspace directory.
  */
-export async function launchBackend(
-  home: string,
-  profile: ProviderProfile,
-  apiKey: string,
-): Promise<RunningBackend> {
+export async function launchBackend(options: LaunchBackendOptions): Promise<RunningBackend> {
+  const { home, profile, apiKey, mode, workspaceDir } = options
   let effective = profile
   let mockServer: MockServer | null = null
 
@@ -34,10 +38,16 @@ export async function launchBackend(
     effective = { ...profile, baseUrl: `${mockServer.url}/v1` }
   }
 
-  writeDshProviderSettings(join(home, 'settings.yaml'), effective)
+  const settingsPath = join(home, 'settings.yaml')
+  await installPresets(home)
+  mkdirSync(workspaceDir, { recursive: true })
+  writeDshProviderSettings(settingsPath, effective)
+  writeDshAgentPresetDefault(settingsPath, mode)
+
   const dsh = await startDsh(home, {
     apiKey: profile.kind === 'mock' ? 'mock-key' : apiKey,
+    cwd: workspaceDir,
   })
 
-  return { dsh, mockServer, profile: effective }
+  return { dsh, mockServer, profile: effective, mode }
 }

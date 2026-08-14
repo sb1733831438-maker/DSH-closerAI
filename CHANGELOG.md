@@ -41,4 +41,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Mock mode running the bundled `@closerai/mock-provider` locally.
 - Smoke test covering both the onboarding UI and the DSH UI mount.
 
+## [0.0.4] - 2026-08-14
+
+### Added
+
+- Three permission-isolated agent presets installed into DSH: Chat (no shell/fs), Work
+  (app-sandbox filesystem without shell), and Code (full shell/fs/terminal/delegation).
+- Active mode routed into DSH's default preset and the child working directory, switchable
+  over the IPC bridge.
+
 ## [Unreleased]

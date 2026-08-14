@@ -34,6 +34,8 @@ export interface SupervisorOptions {
   args?: string[]
   /** Value for DSH_HOME; omitted means inherit the environment. */
   home?: string
+  /** Working directory for the child process. */
+  cwd?: string
   /** Extra environment variables merged over the inherited environment. */
   env?: Record<string, string>
   /** How long to wait for the ready line before failing the start. */
@@ -67,8 +69,11 @@ export const DEFAULT_OPTIONS = {
   shutdownGraceMs: 5_000,
 } as const
 
-export type ResolvedOptions = Required<Omit<SupervisorOptions, 'home' | 'env' | 'shell'>> & {
+export type ResolvedOptions = Required<
+  Omit<SupervisorOptions, 'home' | 'env' | 'shell' | 'cwd'>
+> & {
   shell: boolean
   home?: string
+  cwd?: string
   env: Record<string, string>
 }

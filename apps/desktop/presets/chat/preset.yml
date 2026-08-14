@@ -1,0 +1,3 @@
+name: Chat
+description: 仅聊天与联网，无 Shell、无文件系统访问，附件只读分享。
+order: 1
