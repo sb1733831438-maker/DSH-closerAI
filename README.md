@@ -3,6 +3,8 @@
 > A local-first, model-agnostic, permission-transparent desktop AI workbench for real
 > Chat + Work + Code/Cowork outcomes. **Built on DeepSeek Harness.**
 
+[简体中文](README.zh.md) | English
+
 CloserAI is an open-source desktop application that wraps a
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) process in a hardened
 Electron shell. It is not a reskin: it adds a desktop supervisor, three permission-isolated
