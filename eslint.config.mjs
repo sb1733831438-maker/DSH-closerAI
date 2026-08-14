@@ -24,4 +24,11 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Sandboxed Electron preloads must be CommonJS, so `require` is required.
+    files: ['**/*.cjs'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
 )
