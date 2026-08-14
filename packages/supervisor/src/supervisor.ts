@@ -23,6 +23,7 @@ function resolveOptions(options: SupervisorOptions): ResolvedOptions {
     port: options.port ?? DEFAULT_OPTIONS.port,
     args: options.args ?? [],
     home: options.home,
+    cwd: options.cwd,
     env: options.env ?? {},
     startupTimeoutMs: options.startupTimeoutMs ?? DEFAULT_OPTIONS.startupTimeoutMs,
     healthIntervalMs: options.healthIntervalMs ?? DEFAULT_OPTIONS.healthIntervalMs,
@@ -172,9 +173,11 @@ export class DshSupervisor extends EventEmitter {
     ]
     const env: NodeJS.ProcessEnv = { ...process.env, ...this.options.env }
     if (this.options.home !== undefined) env.DSH_HOME = this.options.home
+    if (this.options.cwd !== undefined) env.DSH_CWD = this.options.cwd
 
     const child = spawn(this.options.command, args, {
       shell: this.options.shell,
+      cwd: this.options.cwd,
       env,
       stdio: ['ignore', 'pipe', 'pipe'],
     })
