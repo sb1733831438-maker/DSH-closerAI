@@ -102,3 +102,24 @@ there.
 **Why:** Electron sandboxed preload scripts cannot be ESM, and TypeScript 5.x no longer emits
 CommonJS via `--outFile`. A hand-written `.cjs` file is the smallest correct artifact and keeps
 the preload trivially auditable.
+
+## D-011 — API keys via safeStorage + environment injection
+
+**Decision:** Provider API keys are encrypted with Electron `safeStorage` (macOS Keychain,
+Windows DPAPI, Linux libsecret) into a separate secrets file, and injected into the DSH child
+only as the `DEEPSEEK_API_KEY` environment variable. The provider profile file and DSH
+`settings.yaml` never contain a key.
+
+**Why:** DSH's credentials seam resolves the key with the inherited process environment at the
+highest precedence, so an env injection is the least invasive way to feed a keychain-held secret
+without materializing it on disk or into DSH-managed files. This satisfies the "key never in
+files/logs/renderer" requirement.
+
+## D-012 — DeepSeek adapter doubles as the OpenAI-compatible adapter
+
+**Decision:** The generic OpenAI-compatible provider reuses DSH's `deepseek-official` route with
+a custom `baseURL` and model catalog rather than shipping a separate adapter.
+
+**Why:** DSH's `dsh-llm-deepseek` adapter speaks the OpenAI chat-completions protocol and accepts
+an arbitrary `baseURL`, so it already covers any OpenAI-compatible endpoint. Reusing it avoids a
+second adapter to maintain while still satisfying "model-agnostic" configuration.
