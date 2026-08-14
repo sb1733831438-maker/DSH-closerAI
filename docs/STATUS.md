@@ -1,37 +1,40 @@
 # Status
 
-> Last updated: 2026-08-14 — v0.0.1 released.
+> Last updated: 2026-08-14 — v0.0.2 released.
 
 ## Current milestone
 
-**v0.0.1 — Bootstrap: complete.** Next up: **v0.0.2 — Desktop Shell** (Electron main process +
-DSH Supervisor + hardened BrowserWindow).
+**v0.0.2 — Desktop Shell: complete.** Next up: **v0.0.3 — Onboarding and Providers**
+(first-run onboarding, OS keychain, DeepSeek + OpenAI-compatible providers, mock mode).
 
 ## Repository
 
 - <https://github.com/sb1733831438-maker/DSH-closerAI>
-- `main` branch, annotated `v0.0.1` tag, and v0.0.1 Release are published.
+- `main` branch, annotated `v0.0.1` and `v0.0.2` tags, matching Releases, CI green on
+  Linux/macOS/Windows.
 
-## What is done (v0.0.1)
+## What is done (v0.0.2)
 
-- Git repository on `main` with atomic Conventional Commits.
-- pnpm workspace with strict TypeScript (NodeNext ESM), ESLint flat config, Prettier, Vitest.
-- Deterministic OpenAI-compatible mock provider (`packages/mock-provider`) — 17 tests passing,
-  dependency-free HTTP server (`/v1/chat/completions`, `/v1/models`, streaming + error paths).
-- MIT license, README, CONTRIBUTING, SECURITY, CHANGELOG, AGENTS.md, and `docs/` records.
-- GitHub Actions CI across Linux, macOS, and Windows.
-- GitHub topics set (dsh-plugin, deepseek-harness, desktop-app, electron, ai-agent,
-  agent-harness, local-first, mcp, multi-model, open-source, typescript, react).
-- DeepSeek Harness pinned to `@deepseek-ai/dsh@0.1.0-rc.6` (documented; dependency wiring
-  lands with the supervisor in v0.0.2).
+- `packages/supervisor` — pure-Node DSH child-process supervisor: spawn `dsh web` on a random
+  loopback port, parse the ready URL from stdout, TCP health checks, crash-restart with backoff
+  and a reset-on-stable window, graceful shutdown. 11 tests against a fake-dsh child, plus a
+  local smoke against the real `dsh`.
+- `apps/desktop` — hardened Electron shell: single-instance lock, deep-link routing
+  (`closerai://`), strict CSP, navigation locked to the DSH origin, external links to the system
+  browser, all permission requests denied, and a minimal frozen `contextBridge` preload.
+- DSH is bundled as `@deepseek-ai/dsh@0.1.0-rc.6` and launched as
+  `ELECTRON_RUN_AS_NODE=1 electron --expose-internals <dsh-bin> web` — no shell, no `.cmd`
+  shims, no second Electron app.
+- `--smoke-test` mode launches the real app, starts bundled DSH, loads the UI in the hardened
+  window, asserts the React app mounted, and exits 0 (verified locally on Windows).
 
 ## What is blocked
 
 Nothing at the moment.
 
-## Next steps (v0.0.2)
+## Next steps (v0.0.3)
 
-1. Electron main process + hardened BrowserWindow (contextIsolation/sandbox/CSP/nav lock).
-2. DSH Supervisor: spawn `dsh web`, random loopback port, health check, logs, crash recovery.
-3. Single instance + deep-link handling.
-4. Verify the embedded DSH UI loads and stays usable; add integration tests.
+1. First-run onboarding flow in the renderer.
+2. OS keychain secret storage (no keys in files/logs/renderer).
+3. DeepSeek + generic OpenAI-compatible provider configuration and connectivity test.
+4. Wire the deterministic mock provider as the no-API-key mode.

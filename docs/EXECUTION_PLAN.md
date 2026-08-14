@@ -17,11 +17,11 @@ and test evidence.
 
 ## v0.0.2 — Desktop Shell
 
-- [ ] Electron main process
-- [ ] DSH Supervisor (spawn, random port, health check, logs, crash recovery)
-- [ ] Hardened BrowserWindow (contextIsolation / sandbox / CSP / navigation lock)
-- [ ] Single instance + deep links
-- [ ] Open and use the existing DSH UI stably
+- [x] Electron main process
+- [x] DSH Supervisor (spawn, random port, health check, logs, crash recovery)
+- [x] Hardened BrowserWindow (contextIsolation / sandbox / CSP / navigation lock)
+- [x] Single instance + deep links
+- [x] Open and use the existing DSH UI stably
 
 ## v0.0.3 — Onboarding and Providers
 
