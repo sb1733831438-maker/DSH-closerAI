@@ -35,6 +35,9 @@ importers:
       '@closerai/supervisor':
         specifier: workspace:*
         version: link:../../packages/supervisor
+      '@deepseek-ai/cordis-plugin-group':
+        specifier: 1.0.1
+        version: 1.0.1(@deepseek-ai/cordis-plugin-loader@1.0.2)(@deepseek-ai/cordis@4.0.1)
       '@deepseek-ai/dsh':
         specifier: 0.1.0-rc.6
         version: 0.1.0-rc.6(a47ef7427f3a8cb85fc0ad8044df45d7)
@@ -6350,7 +6353,7 @@ snapshots:
       '@deepseek-ai/cordis': 4.0.1(@deepseek-ai/cordis-plugin-include@1.0.6)(@deepseek-ai/cordis-plugin-loader@1.0.2)
       '@deepseek-ai/cordis-plugin-loader': 1.0.2(@deepseek-ai/cordis@4.0.1)(node-addon-require-builtin@0.1.4)
       '@deepseek-ai/cosmokit': 1.8.2
-      js-yaml: 4.3.1
+      js-yaml: 4.2.0
 
   '@deepseek-ai/cordis-plugin-loader@1.0.2(@deepseek-ai/cordis@4.0.1)(node-addon-require-builtin@0.1.4)':
     dependencies:
