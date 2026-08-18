@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { startMockServer, type MockServer } from '@closerai/mock-provider'
 import {
   DEEPSEEK_DEFAULT,
@@ -102,5 +102,70 @@ describe('testConnectivity', () => {
     })
     expect(result.ok).toBe(false)
     expect(result.error).toBeTruthy()
+  })
+})
+describe('testConnectivity error mapping (RC hardening)', () => {
+  const base = {
+    baseUrl: 'https://example.com/v1',
+    apiKey: 'sk-test',
+    model: 'm1',
+    timeoutMs: 5000,
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('maps a 401 invalid-key response with the provider error message', async () => {
+    vi.stubGlobal('fetch', async () => ({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: { message: 'Incorrect API key provided' } }),
+    }))
+    const result = await testConnectivity(base)
+    expect(result.ok).toBe(false)
+    expect(result.status).toBe(401)
+    expect(result.error).toContain('Incorrect API key provided')
+  })
+
+  it('falls back to HTTP <status> when the error body is not JSON', async () => {
+    vi.stubGlobal('fetch', async () => ({
+      ok: false,
+      status: 429,
+      json: async () => {
+        throw new Error('boom')
+      },
+    }))
+    const result = await testConnectivity(base)
+    expect(result.ok).toBe(false)
+    expect(result.status).toBe(429)
+    expect(result.error).toBe('HTTP 429')
+  })
+
+  it('maps an offline / network failure to a clear error', async () => {
+    vi.stubGlobal('fetch', async () => {
+      throw new TypeError('fetch failed')
+    })
+    const result = await testConnectivity(base)
+    expect(result.ok).toBe(false)
+    expect(result.error).toBe('fetch failed')
+  })
+
+  it('maps a timeout to an explicit timed-out message', async () => {
+    const abort = new Error('This operation was aborted')
+    abort.name = 'TimeoutError'
+    vi.stubGlobal('fetch', async () => {
+      throw abort
+    })
+    const result = await testConnectivity(base)
+    expect(result.ok).toBe(false)
+    expect(result.error).toContain('timed out after 5000ms')
+  })
+
+  it('reports ok on a 200 response', async () => {
+    vi.stubGlobal('fetch', async () => ({ ok: true, status: 200 }))
+    const result = await testConnectivity(base)
+    expect(result.ok).toBe(true)
+    expect(result.status).toBe(200)
   })
 })
