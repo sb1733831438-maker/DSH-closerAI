@@ -19,7 +19,12 @@ export async function afterPack(context) {
   // tar -h dereferences symlinks; avoids cp 'copy directory into itself'
   const srcParent = dirname(source)
   const tgtParent = dirname(target)
-  execFileSync('bash', ['-c',
-    "cd '" + srcParent + "' && tar -h -cf - node_modules | (cd '" + tgtParent + "' && tar -xf -)",
-  ], { stdio: 'inherit' })
+  execFileSync(
+    'bash',
+    [
+      '-c',
+      "cd '" + srcParent + "' && tar -h -cf - node_modules | (cd '" + tgtParent + "' && tar -xf -)",
+    ],
+    { stdio: 'inherit' },
+  )
 }
