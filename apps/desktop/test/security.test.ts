@@ -66,3 +66,61 @@ describe('hardenedWebPreferences', () => {
     expect(prefs.preload).toBe('/path/to/preload.cjs')
   })
 })
+describe('buildContentSecurityPolicy (RC hardening)', () => {
+  it('locks down form, media, connect, worker and font sources', () => {
+    const csp = buildContentSecurityPolicy()
+    expect(csp).toContain("form-action 'none'")
+    expect(csp).toContain("connect-src 'self'")
+    expect(csp).toContain("img-src 'self' data: blob:")
+    expect(csp).toContain("font-src 'self' data:")
+    expect(csp).toContain("media-src 'self' blob:")
+    expect(csp).toContain("worker-src 'self' blob:")
+  })
+
+  it('never allows remote origins or data: scripts', () => {
+    const csp = buildContentSecurityPolicy()
+    expect(csp).not.toContain('https://')
+    expect(csp).not.toContain('*://')
+    expect(csp).not.toContain("script-src 'self' 'unsafe-inline' 'unsafe-eval' data:")
+  })
+
+  it('is a single header-safe string (no newlines)', () => {
+    expect(buildContentSecurityPolicy()).not.toMatch(/[\r\n]/)
+  })
+})
+
+describe('externalNavigationAction (RC hardening)', () => {
+  it('denies data:, blob:, and ftp: schemes', () => {
+    expect(externalNavigationAction('data:text/html,<script>alert(1)</script>')).toBe('deny')
+    expect(externalNavigationAction('blob:https://example.com/abc')).toBe('deny')
+    expect(externalNavigationAction('ftp://example.com/file')).toBe('deny')
+  })
+
+  it('denies unknown schemes and empty strings', () => {
+    expect(externalNavigationAction('')).toBe('deny')
+    expect(externalNavigationAction('chrome://settings')).toBe('deny')
+  })
+})
+
+describe('isSameOrigin (RC hardening)', () => {
+  it('rejects different schemes on the same host', () => {
+    expect(isSameOrigin('http://127.0.0.1:8080/', 'https://127.0.0.1:8080/')).toBe(false)
+  })
+
+  it('treats a bare origin with no port consistently', () => {
+    expect(isSameOrigin('http://127.0.0.1/', 'http://127.0.0.1:80/')).toBe(true)
+  })
+})
+
+describe('hardenedWebPreferences (RC hardening)', () => {
+  it('returns an exact, exhaustive hardening contract', () => {
+    expect(hardenedWebPreferences('/x.cjs')).toEqual({
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      preload: '/x.cjs',
+    })
+  })
+})
