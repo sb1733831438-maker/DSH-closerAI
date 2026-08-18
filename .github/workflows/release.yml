@@ -34,11 +34,15 @@ jobs:
 
       # Linux preserves pnpm's symlinked layout, so electron-builder's
       # collector keeps the DSH runtime's full dependency tree.
+      - name: Prepare full runtime node_modules
+        run: cd apps/desktop && pnpm deploy --legacy .pack-runtime
+
       - name: Package Windows installer
         env:
           # builder:wine runs as root; wine refuses HOME it does not own
           HOME: /root
           WINEPREFIX: /root/.wine
+          CLOSERAI_RUNTIME_NODE_MODULES: /__w/DSH-closerAI/DSH-closerAI/apps/desktop/.pack-runtime/node_modules
         run: pnpm --filter @closerai/desktop run pack
 
       - name: Verify packaged DSH runtime is complete
