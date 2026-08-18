@@ -10,8 +10,24 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url))
 const preloadPath = join(here, '..', 'preload', 'index.cjs')
+// The app's own renderer entry (onboarding + manage views). Navigation to this
+// file (with any query) is trusted; everything else stays locked to the target
+// origin or is denied.
+const appIndexHtml = join(here, '..', 'renderer', 'index.html')
 
 export type WindowTarget = { kind: 'url'; url: string } | { kind: 'file'; path: string }
+
+/** Whether a URL is the app's own renderer entry page (file://, any query). */
+function isAppIndexNavigation(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== 'file:') return false
+    const expected = appIndexHtml.replace(/\\/g, '/').toLowerCase()
+    return parsed.pathname.toLowerCase() === expected
+  } catch {
+    return false
+  }
+}
 
 function targetOrigin(target: WindowTarget): string | null {
   if (target.kind === 'url') {
@@ -52,6 +68,7 @@ export function createWindow(target: WindowTarget): BrowserWindow {
 
   const origin = targetOrigin(target)
   window.webContents.on('will-navigate', (event, url) => {
+    if (isAppIndexNavigation(url)) return
     const allowed = origin !== null && isAllowedInternalNavigation(url, origin)
     if (!allowed) {
       event.preventDefault()

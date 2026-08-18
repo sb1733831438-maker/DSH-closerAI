@@ -128,9 +128,45 @@ function main(): void {
         console.log(
           `[closerai] smoke: loaded ${running.dsh.url} title="${title}" rootChildren=${rootChildren}`,
         )
-        const ok = typeof rootChildren === 'number' && rootChildren > 0
-        await stopBackend()
-        app.exit(ok ? 0 : 1)
+        const chatOk = typeof rootChildren === 'number' && rootChildren > 0
+        if (!chatOk) {
+          await stopBackend()
+          app.exit(1)
+          return
+        }
+        // v0.0.5: the management (workspace & history) page must also mount.
+        try {
+          // loadFile resolves once the page finishes loading; a separate
+          // did-finish-load wait here would race and hang.
+          await window!.loadFile(onboardingPath, { query: { view: 'manage' } })
+          const manageChildren = await window!.webContents.executeJavaScript(
+            "document.getElementById('root')?.childElementCount ?? 0",
+          )
+          const manageTitle = await window!.webContents.executeJavaScript('document.title')
+          // getAppState() is async over IPC; poll briefly for the real content
+          // (the manage heading) instead of racing the initial "加载中…" frame.
+          let manageHasContent = false
+          for (let attempt = 0; attempt < 50 && !manageHasContent; attempt += 1) {
+            manageHasContent =
+              (await window!.webContents.executeJavaScript(
+                "document.body.innerText.includes('CloserAI 工作区')",
+              )) === true
+            if (!manageHasContent) await new Promise((resolve) => setTimeout(resolve, 100))
+          }
+          console.log(
+            `[closerai] smoke: manage page title="${manageTitle}" rootChildren=${manageChildren} content=${manageHasContent}`,
+          )
+          // rootChildren > 0 plus the manage heading proves getAppState()
+          // resolved and the full workspace/history UI rendered.
+          const manageOk =
+            typeof manageChildren === 'number' && manageChildren > 0 && manageHasContent === true
+          await stopBackend()
+          app.exit(manageOk ? 0 : 1)
+        } catch (error) {
+          console.error('[closerai] smoke: manage page failed:', error)
+          await stopBackend()
+          app.exit(1)
+        }
       })
       window!.webContents.once('did-fail-load', async (_event, code, description) => {
         console.error(`[closerai] smoke: failed to load (${code}) ${description}`)
