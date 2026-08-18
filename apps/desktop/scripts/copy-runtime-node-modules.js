@@ -15,7 +15,7 @@ export async function afterPack(context) {
   }
   const target = join(context.appOutDir, 'resources', 'app', 'node_modules')
   rmSync(target, { recursive: true, force: true })
-  mkdirSync(target, { recursive: true })
-  // dereference symlinks so the packaged tree is self-contained (Linux-safe)
-  execFileSync('cp', ['-rL', source + '/.', target + '/'], { stdio: 'inherit' })
+  mkdirSync(join(context.appOutDir, 'resources', 'app'), { recursive: true })
+  // cp -rL source target: dereference symlinks, avoid 'into itself'
+  execFileSync('cp', ['-rL', source, target], { stdio: 'inherit' })
 }
