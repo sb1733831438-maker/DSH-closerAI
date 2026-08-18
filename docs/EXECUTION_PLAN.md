@@ -85,4 +85,7 @@ and test evidence.
 
 ## v0.1.0 — Daily-use Release
 
-Only after all acceptance criteria in the goal are verified from a clean clone/install.
+- [x] Windows installer (CloserAI-0.1.0-Setup-x64.exe + SHA256SUMS.txt) on the v0.1.0 Release
+- [x] Fresh-install smoke verified (clean directory install → onboarding → DSH UI → management page, exit 0)
+- [x] GitHub Release all green (tag-triggered workflow success; main CI green)
+- [x] Released.
