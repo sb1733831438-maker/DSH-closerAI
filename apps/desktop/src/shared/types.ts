@@ -37,3 +37,55 @@ export interface AppConfig {
   /** The authorized directory for Code mode; null until the user picks one. */
   workspaceDir: string | null
 }
+
+/** A user-defined project: a named workspace + mode combination. */
+export interface Project {
+  /** Stable local id. */
+  id: string
+  name: string
+  mode: Mode
+  /** Authorized workspace for Code mode; null until the user picks one. */
+  workspaceDir: string | null
+  createdAt: number
+  updatedAt: number
+}
+
+export interface ProjectStoreData {
+  activeProjectId: string | null
+  projects: Project[]
+}
+
+export interface CreateProjectInput {
+  name: string
+  mode: Mode
+  workspaceDir?: string | null
+}
+
+/** A session record discovered under DSH_HOME/sessions. */
+export interface SessionEntry {
+  /** Directory name, e.g. session-<uuid>. */
+  id: string
+  /** DSH's cwd-encoded workspace key (parent dir name). */
+  workspaceKey: string
+  /** Absolute path to the session directory. */
+  dir: string
+  sizeBytes: number
+  mtimeMs: number
+  fileCount: number
+}
+
+/** Result payload for file-backed operations. */
+export interface OpResult {
+  ok: boolean
+  error?: string
+  path?: string
+}
+
+/** Snapshot the shell UI needs in one call. */
+export interface AppState {
+  mode: Mode
+  activeProjectId: string | null
+  projects: Project[]
+  sessions: SessionEntry[]
+  backendUrl: string | null
+}

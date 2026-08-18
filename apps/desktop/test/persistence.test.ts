@@ -1,7 +1,7 @@
 import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { spawn, type SpawnOptionsWithoutStdio } from 'node:child_process'
+import { spawn, type SpawnOptions } from 'node:child_process'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startMockServer, type MockServer } from '@closerai/mock-provider'
 import { resolveDshBin } from '../src/main/dsh.js'
@@ -54,7 +54,7 @@ function runHeadless(): Promise<{
   stderr: string
 }> {
   return new Promise((resolve, reject) => {
-    const options: SpawnOptionsWithoutStdio = {
+    const options: SpawnOptions = {
       env: { ...process.env, DSH_HOME: home, DEEPSEEK_API_KEY: 'mock-key' },
       // stdin ignored: DSH headless must not wait on a TTY, and leaving the
       // pipe open would risk the same EOF deadlock family.
@@ -67,10 +67,10 @@ function runHeadless(): Promise<{
     )
     let stdout = ''
     let stderr = ''
-    child.stdout.on('data', (chunk: Buffer) => {
+    child.stdout!.on('data', (chunk: Buffer) => {
       stdout += chunk.toString('utf8')
     })
-    child.stderr.on('data', (chunk: Buffer) => {
+    child.stderr!.on('data', (chunk: Buffer) => {
       stderr += chunk.toString('utf8')
     })
     const timer = setTimeout(() => {

@@ -1,4 +1,14 @@
-import type { AppConfig, ConnectivityResult, ProviderProfile } from './types.js'
+import type {
+  AppConfig,
+  AppState,
+  ConnectivityResult,
+  CreateProjectInput,
+  OpResult,
+  Project,
+  ProjectStoreData,
+  ProviderProfile,
+  SessionEntry,
+} from './types.js'
 
 /** IPC channel names shared by the main process and the preload bridge. */
 export const IPC = {
@@ -10,6 +20,16 @@ export const IPC = {
   onboardingComplete: 'onboarding:complete',
   modeGet: 'mode:get',
   modeSet: 'mode:set',
+  sessionsList: 'sessions:list',
+  sessionsDelete: 'sessions:delete',
+  sessionsExport: 'sessions:export',
+  sessionsImport: 'sessions:import',
+  projectsList: 'projects:list',
+  projectsCreate: 'projects:create',
+  projectsUpdate: 'projects:update',
+  projectsDelete: 'projects:delete',
+  projectsActivate: 'projects:activate',
+  appState: 'app:state',
 } as const
 
 export interface SaveProviderInput {
@@ -34,4 +54,14 @@ export interface CloserAiBridge {
   completeOnboarding(): Promise<{ ok: boolean }>
   getMode(): Promise<AppConfig>
   setMode(config: AppConfig): Promise<{ ok: boolean }>
+  getAppState(): Promise<AppState>
+  listSessions(): Promise<SessionEntry[]>
+  deleteSession(id: string): Promise<OpResult>
+  exportSession(id: string, destDir: string): Promise<OpResult>
+  importSession(srcDir: string): Promise<OpResult>
+  listProjects(): Promise<ProjectStoreData>
+  createProject(input: CreateProjectInput): Promise<OpResult & { project?: Project }>
+  updateProject(project: Project): Promise<OpResult>
+  deleteProject(id: string): Promise<OpResult>
+  activateProject(id: string | null): Promise<OpResult>
 }
