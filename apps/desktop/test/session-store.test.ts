@@ -142,3 +142,32 @@ describe('SessionStore.importFrom', () => {
     }
   })
 })
+describe('SessionStore.list (RC disk-error hardening)', () => {
+  it('ignores stray files at the sessions root', async () => {
+    const store = new SessionStore(root)
+    makeSession('--w1--', ID_A, 'abc')
+    writeFileSync(join(root, 'stray-file.txt'), 'x', 'utf8')
+    const entries = await store.list()
+    expect(entries).toHaveLength(1)
+  })
+
+  it('still lists a session whose record file exists but is empty/corrupt', async () => {
+    const store = new SessionStore(root)
+    makeSession('--w1--', ID_A, '') // 0-byte record (crash mid-write)
+    const entries = await store.list()
+    expect(entries).toHaveLength(1)
+    expect(entries[0]!.id).toBe(ID_A)
+    expect(entries[0]!.sizeBytes).toBe(0)
+  })
+
+  it('survives a workspace directory that cannot be enumerated', async () => {
+    const store = new SessionStore(root)
+    makeSession('--w1--', ID_A, 'abc')
+    // a workspace entry that looks like a directory but is actually a file:
+    // readdir(workspaceDir) throws, list() must skip it, not fail
+    writeFileSync(join(root, '--broken--'), 'not a dir', 'utf8')
+    const entries = await store.list()
+    expect(entries).toHaveLength(1)
+    expect(entries[0]!.workspaceKey).toBe('--w1--')
+  })
+})

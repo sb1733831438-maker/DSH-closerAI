@@ -64,17 +64,22 @@ and test evidence.
 
 ## v0.0.8 — Packaging and Security
 
-- [ ] Windows / macOS / Linux CI builds
-- [ ] Installers + SHA-256 checksums
-- [ ] CSP / Origin / token / preload / navigation security tests
-- [ ] Dependency and license audit
-- [ ] SBOM, THIRD_PARTY_NOTICES, SECURITY
+- [x] Windows CI build (release-build workflow, tag-triggered)
+- [ ] macOS / Linux CI builds (deferred: Windows installer is the v0.1.0 gate)
+- [x] Installers + SHA-256 checksums (CloserAI-0.0.8-Setup-x64.exe + SHA256SUMS.txt)
+- [x] CSP / Origin / navigation security tests (security.test.ts, 17 cases)
+- [x] Dependency and license audit (scripts/audit-licenses.mjs)
+- [x] THIRD_PARTY_NOTICES (regenerated from the audit), SECURITY exists
+- [ ] SBOM (CycloneDX/Syft) — deferred
 
 ## v0.0.9 — Release Candidate
 
-- [ ] Clean-environment install test
-- [ ] Long-running, crash-recovery, offline, invalid-key, disk-error tests
-- [ ] Complete bilingual README, user manual, plugin dev docs, troubleshooting
+- [x] Clean-environment install test (v0.0.8 fresh-install packaged smoke)
+- [x] Crash-recovery tests (supervisor restarts on crash + unhealthy port, pre-existing)
+- [x] Disk-error / corrupt-state tests (session-store: stray files, 0-byte records)
+- [x] Offline / invalid-key / timeout connectivity tests (providers.test.ts)
+- [x] Complete bilingual README, user manual (EN+zh), troubleshooting
+- [x] Plugin dev docs (docs/PLUGIN_DEV.md)
 - [ ] Resolve all P0/P1 defects
 - [ ] Publish v0.1.0-rc.1 (then rc.2, rc.3 as needed)
 
