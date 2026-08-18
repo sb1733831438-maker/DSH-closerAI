@@ -86,3 +86,12 @@ Nothing at the moment.
    CSP/eval hardening replacement (D-009 revisit).
 2. v0.0.9 → v0.1.0: release-candidate hardening, docs, and full acceptance.
 3. v0.0.9 → v0.1.0: release-candidate hardening, docs, and full acceptance.
+
+## Packaging status (v0.0.8, WIP)
+
+- electron-builder scaffolding works: a Windows NSIS installer builds, and the packaged DSH
+  runtime is resolvable (verified: DSH web boots from packaged resources).
+- Open blocker: pnpm's isolated node_modules layout is not fully packed by electron-builder
+  (transitive deps like @deepseek-ai/cordis-plugin-group that live only in the virtual store),
+  and a packaged GUI boot hang needs one more debug round. Solving this requires a dedicated
+  flat production node_modules for the build (not a workspace layout change).

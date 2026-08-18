@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "start": "electron .",
-    "smoke": "electron . --smoke-test"
+    "smoke": "electron . --smoke-test",
+    "pack": "electron-builder --config electron-builder.yml --win nsis",
+    "pack:dir": "electron-builder --config electron-builder.yml --dir"
   },
   "dependencies": {
     "@closerai/mock-provider": "workspace:*",
@@ -27,6 +29,7 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.1",
     "electron": "43.4.0",
+    "electron-builder": "25.1.8",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "typescript": "5.9.3",

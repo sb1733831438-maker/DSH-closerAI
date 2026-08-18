@@ -1,0 +1,31 @@
+appId: com.closerai.app
+productName: CloserAI
+directories:
+  output: release
+  buildResources: build-resources
+files:
+  - dist/**/*
+  - presets/**/*
+  - resources/**/*
+  - package.json
+  - '!**/*.map'
+  - '!**/node_modules/**/.cache'
+# DSH is spawned with ELECTRON_RUN_AS_NODE, which cannot read asar
+# archives, so the runtime must ship as real files.
+asar: false
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build-resources/icon.png
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  createDesktopShortcut: true
+  shortcutName: CloserAI
+  artifactName: CloserAI-${version}-Setup-${arch}.${ext}
+npmRebuild: false
+electronDownload:
+  cache: null
