@@ -3,6 +3,7 @@ import type {
   AppState,
   Capabilities,
   ConnectivityResult,
+  Diagnostics,
   CreateProjectInput,
   OpResult,
   Project,
@@ -36,6 +37,8 @@ export const IPC = {
   dialogPickDirectory: 'dialog:pick-directory',
   capsGet: 'caps:get',
   capsSet: 'caps:set',
+  appDiagnostics: 'app:diagnostics',
+  appExportDiagnostics: 'app:export-diagnostics',
 } as const
 
 export interface SaveProviderInput {
@@ -75,4 +78,6 @@ export interface CloserAiBridge {
   pickDirectory(): Promise<string | null>
   getCapabilities(): Promise<Capabilities>
   setCapabilities(caps: Capabilities): Promise<OpResult>
+  getDiagnostics(): Promise<Diagnostics>
+  exportDiagnostics(destDir: string): Promise<OpResult>
 }

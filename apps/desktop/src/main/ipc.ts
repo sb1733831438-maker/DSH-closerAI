@@ -1,4 +1,6 @@
 import { dialog, ipcMain } from 'electron'
+import { writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import {
   DEEPSEEK_DEFAULT,
   MOCK_DEFAULT,
@@ -9,6 +11,7 @@ import type { ProviderStoreFile } from './provider-store.js'
 import type { SecretStore } from './secrets.js'
 import type { AppConfigStore } from './mode-store.js'
 import type { CapabilitiesStore } from './capabilities.js'
+import { buildDiagnostics, renderDiagnosticsReport } from './diagnostics.js'
 import type { ProjectStore } from './project-store.js'
 import type { SessionStore } from './session-store.js'
 import { workspaceKeyFromPath } from './session-store.js'
@@ -17,6 +20,8 @@ import type {
   AppState,
   Capabilities,
   CreateProjectInput,
+  DiagnosticLogLine,
+  Diagnostics,
   OpResult,
   Project,
 } from '../shared/types.js'
@@ -40,6 +45,10 @@ export interface IpcDeps {
   showChat: () => void
   /** Navigate the shell to the CloserAI management page. */
   showManage: () => void
+  /** Redacted recent child log lines for diagnostics. */
+  diagnosticsLogs: () => DiagnosticLogLine[]
+  /** Supervisor state for the diagnostics snapshot. */
+  supervisorStatus: () => { state: string; pid: number | null }
 }
 
 function ok(): OpResult {
@@ -229,6 +238,53 @@ export function registerIpcHandlers(deps: IpcDeps): void {
       deps.capabilitiesStore.write(caps)
       deps.onComplete()
       return ok()
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.appDiagnostics, async (): Promise<Diagnostics> => {
+    const projects = deps.projectStore.read()
+    const active = projects.projects.find((p) => p.id === projects.activeProjectId) ?? null
+    const sessions = await deps.sessionStore.list()
+    const status = deps.supervisorStatus()
+    return buildDiagnostics({
+      appVersion: '0.0.6',
+      platform: process.platform,
+      mode: deps.configStore.read().mode,
+      activeProjectName: active?.name ?? null,
+      capabilities: deps.capabilitiesStore.read(),
+      sessionCount: sessions.length,
+      backendUrl: deps.backendUrl(),
+      supervisorState: status.state,
+      supervisorPid: status.pid,
+      logLines: deps.diagnosticsLogs().slice(-500),
+      generatedAt: Date.now(),
+    })
+  })
+
+  ipcMain.handle(IPC.appExportDiagnostics, async (_event, destDir: string): Promise<OpResult> => {
+    try {
+      const projects = deps.projectStore.read()
+      const active = projects.projects.find((p) => p.id === projects.activeProjectId) ?? null
+      const sessions = await deps.sessionStore.list()
+      const status = deps.supervisorStatus()
+      const diag = buildDiagnostics({
+        appVersion: '0.0.6',
+        platform: process.platform,
+        mode: deps.configStore.read().mode,
+        activeProjectName: active?.name ?? null,
+        capabilities: deps.capabilitiesStore.read(),
+        sessionCount: sessions.length,
+        backendUrl: deps.backendUrl(),
+        supervisorState: status.state,
+        supervisorPid: status.pid,
+        logLines: deps.diagnosticsLogs().slice(-500),
+        generatedAt: Date.now(),
+      })
+      const file = join(destDir, 'closerai-diagnostics-' + Date.now() + '.txt')
+      await writeFile(file, renderDiagnosticsReport(diag), 'utf8')
+      return { ok: true, path: file }
     } catch (error) {
       return fail(error)
     }

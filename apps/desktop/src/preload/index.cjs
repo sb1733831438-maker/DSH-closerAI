@@ -27,6 +27,8 @@ const IPC = {
   dialogPickDirectory: 'dialog:pick-directory',
   capsGet: 'caps:get',
   capsSet: 'caps:set',
+  appDiagnostics: 'app:diagnostics',
+  appExportDiagnostics: 'app:export-diagnostics',
 }
 
 /** @type {import('../shared/ipc').CloserAiBridge} */

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type {
   AppState,
   Capabilities,
+  Diagnostics,
   Mode,
   OpResult,
   Project,
@@ -38,6 +39,8 @@ export function Manage(): React.JSX.Element {
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const [caps, setCaps] = useState<Capabilities | null>(null)
+  const [diag, setDiag] = useState<Diagnostics | null>(null)
+  const [showLogs, setShowLogs] = useState(false)
   const [name, setName] = useState('')
   const [mode, setMode] = useState<Mode>('chat')
   const [workspaceDir, setWorkspaceDir] = useState('')
@@ -143,6 +146,33 @@ export function Manage(): React.JSX.Element {
       } else {
         setError(result.error ?? '导入失败')
       }
+    } catch (e) {
+      setError(errText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const refreshDiagnostics = async (): Promise<void> => {
+    setBusy(true)
+    try {
+      setDiag(await window.closerai.getDiagnostics())
+      setError('')
+    } catch (e) {
+      setError(errText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const onExportDiagnostics = async (): Promise<void> => {
+    setBusy(true)
+    try {
+      const dest = await window.closerai.pickDirectory()
+      if (dest === null) return
+      const result = await window.closerai.exportDiagnostics(dest)
+      if (result.ok) setNotice('诊断已导出到 ' + result.path)
+      else setError(result.error ?? '导出失败')
     } catch (e) {
       setError(errText(e))
     } finally {
@@ -304,6 +334,37 @@ export function Manage(): React.JSX.Element {
           </>
         )}
       </section>
+
+      <section className="card">
+        <h2>诊断</h2>
+        <p className="hint">查看 DSH 子进程状态与最近日志（已自动脱敏），或导出完整诊断报告。</p>
+        <div className="row-actions" style={{ marginBottom: 12 }}>
+          <button disabled={busy} onClick={() => void refreshDiagnostics()}>
+            刷新
+          </button>
+          <button disabled={busy} onClick={() => void onExportDiagnostics()}>
+            导出诊断…
+          </button>
+        </div>
+        {diag !== null && (
+          <div className="diag">
+            <p className="meta">
+              CloserAI {diag.appVersion} · {diag.platform} · 模式 {diag.mode} · 项目{' '}
+              {diag.activeProjectName ?? '（无）'} · 会话 {diag.sessionCount} 个 · DSH{' '}
+              {diag.supervisorState} (pid {diag.supervisorPid ?? 'n/a'})
+            </p>
+            <button onClick={() => setShowLogs((v) => !v)}>
+              {showLogs ? '收起日志' : '显示最近日志 (' + diag.logLines.length + ' 行)'}
+            </button>
+            {showLogs && (
+              <pre className="logview">
+                {diag.logLines.length === 0 ? '（暂无日志）' : diag.logLines.slice(-20).join('\n')}
+              </pre>
+            )}
+          </div>
+        )}
+      </section>
+
       <section className="card">
         <h2>会话历史</h2>
         <p className="actions">

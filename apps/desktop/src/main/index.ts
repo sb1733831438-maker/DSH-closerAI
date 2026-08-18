@@ -236,6 +236,11 @@ function main(): void {
       backendUrl: () => (backend === null ? null : backend.dsh.url),
       showChat,
       showManage: showManagePage,
+      diagnosticsLogs: () => (backend === null ? [] : backend.dsh.supervisor.logs.entries()),
+      supervisorStatus: () =>
+        backend === null
+          ? { state: 'idle', pid: null }
+          : { state: backend.dsh.supervisor.getState(), pid: backend.dsh.supervisor.getPid() },
       onComplete: () => {
         void startBackendForActiveProfile()
       },

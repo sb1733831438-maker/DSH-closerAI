@@ -100,3 +100,25 @@ export interface Capabilities {
   /** Whether the skills tool is mounted (Code preset). */
   skills: boolean
 }
+
+/** One captured child log line, redacted before it leaves the main process. */
+export interface DiagnosticLogLine {
+  stream: 'stdout' | 'stderr'
+  text: string
+  at: number
+}
+
+/** Diagnostics snapshot shown in the management page / export bundle. */
+export interface Diagnostics {
+  appVersion: string
+  platform: string
+  mode: Mode
+  activeProjectName: string | null
+  capabilities: Capabilities
+  sessionCount: number
+  backendUrl: string | null
+  supervisorState: string
+  supervisorPid: number | null
+  logLines: DiagnosticLogLine[]
+  generatedAt: number
+}
