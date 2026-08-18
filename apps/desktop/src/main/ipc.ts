@@ -257,7 +257,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     const sessions = await deps.sessionStore.list()
     const status = deps.supervisorStatus()
     return buildDiagnostics({
-      appVersion: '0.0.6',
+      appVersion: '0.0.7',
       platform: process.platform,
       mode: deps.configStore.read().mode,
       activeProjectName: active?.name ?? null,
@@ -278,7 +278,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
       const sessions = await deps.sessionStore.list()
       const status = deps.supervisorStatus()
       const diag = buildDiagnostics({
-        appVersion: '0.0.6',
+        appVersion: '0.0.7',
         platform: process.platform,
         mode: deps.configStore.read().mode,
         activeProjectName: active?.name ?? null,

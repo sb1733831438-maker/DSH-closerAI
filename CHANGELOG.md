@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.7] - 2026-08-18
+
+### Added
+
+- System tray with quick actions (返回对话 / 工作区与历史 / 开机启动 / 退出); closing the
+  window now keeps the app running in the tray instead of quitting.
+- Native notifications when the DSH backend stops or recovers after a crash.
+- Launch-at-login toggle (tray menu + management page), applied via the OS login item.
+- Log viewer and diagnostics export (already landed in v0.0.6) complete the v0.0.7
+  "Native Desktop" surface.
+
 ## [0.0.6] - 2026-08-18
 
 ### Added
