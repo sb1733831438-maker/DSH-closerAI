@@ -88,6 +88,7 @@ export interface AppState {
   projects: Project[]
   sessions: SessionEntry[]
   capabilities: Capabilities
+  permissions: ModePermissions[]
   backendUrl: string | null
 }
 
@@ -121,4 +122,18 @@ export interface Diagnostics {
   supervisorPid: number | null
   logLines: DiagnosticLogLine[]
   generatedAt: number
+}
+
+/** One granted capability inside a mode's permission manifest. */
+export interface PermissionEntry {
+  /** Display name of the tool / capability. */
+  tool: string
+  /** What the tool may do. */
+  permission: string
+}
+
+/** The designed permission surface for one mode (drives the manifest UI). */
+export interface ModePermissions {
+  mode: Mode
+  entries: PermissionEntry[]
 }

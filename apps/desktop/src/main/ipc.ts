@@ -11,6 +11,7 @@ import type { ProviderStoreFile } from './provider-store.js'
 import type { SecretStore } from './secrets.js'
 import type { AppConfigStore } from './mode-store.js'
 import type { CapabilitiesStore } from './capabilities.js'
+import { MODE_PERMISSIONS } from './permissions.js'
 import { buildDiagnostics, renderDiagnosticsReport } from './diagnostics.js'
 import type { ProjectStore } from './project-store.js'
 import type { SessionStore } from './session-store.js'
@@ -218,6 +219,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
       projects: projects.projects,
       sessions,
       capabilities: deps.capabilitiesStore.read(),
+      permissions: MODE_PERMISSIONS,
       backendUrl: deps.backendUrl(),
     }
   })

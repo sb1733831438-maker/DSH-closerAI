@@ -222,6 +222,25 @@ export function Manage(): React.JSX.Element {
       </section>
 
       <section className="card">
+        <h2>权限清单</h2>
+        <p className="hint">
+          当前模式「${MODE_LABEL[state.mode]}」设计授予的能力；实际启用的工具还受「能力设置」影响。
+        </p>
+        <ul className="list">
+          {state.permissions
+            .find((item) => item.mode === state.mode)
+            ?.entries.map((entry) => (
+              <li key={entry.tool}>
+                <div className="row">
+                  <strong>{entry.tool}</strong>
+                  <span className="meta">{entry.permission}</span>
+                </div>
+              </li>
+            ))}
+        </ul>
+      </section>
+
+      <section className="card">
         <h2>新建项目</h2>
         <div className="grid">
           <label>
