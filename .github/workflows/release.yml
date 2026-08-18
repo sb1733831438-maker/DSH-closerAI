@@ -41,6 +41,12 @@ jobs:
           WINEPREFIX: /root/.wine
         run: pnpm --filter @closerai/desktop run pack
 
+      - name: Verify packaged DSH runtime is complete
+        run: |
+          test -d apps/desktop/release/win-unpacked/resources/app/node_modules/@deepseek-ai/cordis-plugin-group && echo 'cordis-plugin-group present' || (echo 'cordis MISSING'; exit 1)
+          test -f apps/desktop/release/win-unpacked/resources/app/node_modules/@deepseek-ai/dsh/lib/bin.js && echo 'dsh bin present'
+          ls apps/desktop/release/win-unpacked/resources/app/node_modules/@deepseek-ai/ | wc -l
+
       - name: Compute SHA-256
         working-directory: apps/desktop/release
         run: |
@@ -53,6 +59,11 @@ jobs:
           path: |
             apps/desktop/release/CloserAI-*-Setup-x64.exe
             apps/desktop/release/SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: win-unpacked
+          path: apps/desktop/release/win-unpacked/**
 
       - name: Attach to GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
