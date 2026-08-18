@@ -1,18 +1,26 @@
 # Status
 
-> Last updated: 2026-08-18 — v0.0.5 released.
+> Last updated: 2026-08-18 — v0.0.6 released.
 
 ## Current milestone
 
-**v0.0.5 — Daily Conversation: complete.** Session persistence, restart recovery,
-projects/workspaces, and session history management ship in the desktop app. Next up:
-**v0.0.6 — Extensions and Web** (web search, MCP, skills, plugin permission manifest, subagent/plan/task UI).
+**v0.0.6 — Extensions and Web: complete.** Capability toggles (web search/fetch/skills),
+projects/workspaces, session history). Next up:
+**v0.0.7 — Native Desktop** (tray, notifications, launch-at-login, diagnostics).
 
 ## Repository
 
 - <https://github.com/sb1733831438-maker/DSH-closerAI>
 - `main` branch, annotated `v0.0.1`–`v0.0.5` tags, matching Releases, CI green on
   Linux/macOS/Windows.
+
+## What is done (v0.0.6)
+
+- Capability toggles (web search / web fetch / skills) rendered into the Chat / Work / Code
+  presets at install time; no DSH core changes.
+- Diagnostics view + export: DSH supervisor state, summary, and recent child logs with
+  in-process redaction (secrets never leave the main process).
+- Per-mode permission manifest in the management page.
 
 ## What is done (v0.0.5)
 
@@ -68,8 +76,7 @@ Nothing at the moment.
 
 ## Next steps
 
-1. v0.0.6: web search/fetch, MCP management, skills, plugin permission manifest,
-   subagent/plan/task UI.
-2. v0.0.7: tray, notifications, launch-at-login, log viewer, diagnostics export.
-3. v0.0.8: Windows/macOS/Linux CI builds, installers + checksums, security tests.
-4. v0.0.9 → v0.1.0: release-candidate hardening, docs, and full acceptance.
+1. v0.0.7: tray, notifications, launch-at-login (log viewer + diagnostics export already ship
+   via the management page).
+2. v0.0.8: Windows/macOS/Linux CI builds, installers + checksums, security tests.
+3. v0.0.9 → v0.1.0: release-candidate hardening, docs, and full acceptance.
