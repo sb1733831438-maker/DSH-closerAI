@@ -35,6 +35,10 @@ jobs:
       # Linux preserves pnpm's symlinked layout, so electron-builder's
       # collector keeps the DSH runtime's full dependency tree.
       - name: Package Windows installer
+        env:
+          # builder:wine runs as root; wine refuses HOME it does not own
+          HOME: /root
+          WINEPREFIX: /root/.wine
         run: pnpm --filter @closerai/desktop run pack
 
       - name: Compute SHA-256
