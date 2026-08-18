@@ -58,7 +58,8 @@ jobs:
       - name: Compute SHA-256
         shell: pwsh
         run: |
-          Get-FileHash -Algorithm SHA256 "apps\desktop\release\CloserAI-0.0.8-Setup-x64.exe" | ForEach-Object { "$($_.Hash.ToLower())  CloserAI-0.0.8-Setup-x64.exe" } | Set-Content apps\desktop\release\SHA256SUMS.txt
+          $exe = Get-ChildItem "apps\desktop\release\CloserAI-*-Setup-x64.exe" | Select-Object -First 1
+          Get-FileHash -Algorithm SHA256 $exe.FullName | ForEach-Object { "$($_.Hash.ToLower())  $($exe.Name)" } | Set-Content apps\desktop\release\SHA256SUMS.txt
           Get-Content apps\desktop\release\SHA256SUMS.txt
 
       - uses: actions/upload-artifact@v4
