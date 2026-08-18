@@ -1,43 +1,75 @@
 # Status
 
-> Last updated: 2026-08-14 — v0.0.4 released.
+> Last updated: 2026-08-18 — v0.0.5 released.
 
 ## Current milestone
 
-**v0.0.4 — Chat / Work / Code Profiles: complete.** Next up: **v0.0.5 — Daily
-Conversation** (session persistence, history, projects, restart recovery, file handling).
+**v0.0.5 — Daily Conversation: complete.** Session persistence, restart recovery,
+projects/workspaces, and session history management ship in the desktop app. Next up:
+**v0.0.6 — Extensions and Web** (web search, MCP, skills, plugin permission manifest, subagent/plan/task UI).
 
 ## Repository
 
 - <https://github.com/sb1733831438-maker/DSH-closerAI>
-- `main` branch, annotated `v0.0.1`–`v0.0.4` tags, matching Releases, CI green on
+- `main` branch, annotated `v0.0.1`–`v0.0.5` tags, matching Releases, CI green on
   Linux/macOS/Windows.
 
-## What is done (v0.0.4)
+## What is done (v0.0.5)
 
-- Three permission-isolated agent presets shipped and installed into the DSH
-  agent-presets root:
-  - **Chat** — web + ask-user + todo, no shell and no filesystem.
-  - **Work** — filesystem + editor in the app-private sandbox, no shell.
-  - **Code** — full shell, filesystem, terminal, plan, subagents, workflows over the
-    user-authorized directory.
-- Active mode is routed into DSH's default preset and the child working directory
-  (the sandbox workspace root), and is switchable over the IPC bridge.
+- DSH session persistence verified end-to-end: a headless DSH run against the mock
+  provider creates a durable `session.jsonl.zstd` under `DSH_HOME/sessions`, and prior
+  records survive a second run (restart recovery).
+- Session history service (`SessionStore`): list/delete/export/import of DSH session
+  directories, all paths validated to stay inside the sessions root.
+- Projects (`ProjectStore`): named Chat/Work/Code projects with optional Code workspace
+  directory; the active project drives the DSH preset + child working directory and is
+  restored on relaunch (restart recovery).
+- Management page (CloserAI 工作区) via menu / `Ctrl+Shift+M` / `closerai://manage`:
+  project create/activate/delete, session list/delete/export/import with native folder
+  pickers, and back-to-chat.
+- Navigation lock fixed so the app's own renderer entry page is navigable from the DSH UI.
+- Smoke test now covers onboarding, DSH UI mount, and the management page's real content.
+
+## v0.1.0 gap list (verified from current state)
+
+The following acceptance items from the v0.1.0 daily-use goal are still open; each is
+tracked in docs/EXECUTION_PLAN.md under the matching milestone:
+
+1. **Conversation UI polish (in DSH, adopted)** — stream stability, stop/retry/resend,
+   Markdown rendering, and session rename/switch inside the DSH UI are inherited from DSH;
+   needs manual acceptance on Windows before v0.1.0.
+2. **Mode picker UI** — Code-mode workspace directory picker is not wired into a UI yet;
+   today it is set via the manage page project form (v0.0.5) or app-config.json.
+3. **Web Search / Fetch** (v0.0.6).
+4. **MCP server management** (v0.0.6).
+5. **Skills management** (v0.0.6).
+6. **Plugin permission manifest, pinned versions, source + hash display** (v0.0.6).
+7. **Subagent / plan / task status UI** (v0.0.6).
+8. **Tray, notifications, launch-at-login, log viewer, diagnostics export** (v0.0.7).
+9. **Windows x64 installer + SHA-256 + fresh-environment smoke** (v0.0.8).
+10. **CSP/eval hardening replacement** — D-009 revisit (exact hashes) in v0.0.8.
+11. **Clean-install, long-running, crash/offline/disk-error tests** (v0.0.9).
+12. **Bilingual user manual + plugin dev docs + troubleshooting** (v0.0.9).
+13. **Release assets/checksums + GitHub Topics aligned with actual capability** (v0.0.9–v0.1.0).
 
 ## What is blocked
 
 Nothing at the moment.
 
-## Known limitations (v0.0.4)
+## Known limitations (v0.0.5)
 
-- The Code-mode directory picker is not wired into a UI yet; the workspace directory
-  is set programmatically (`app-config.json`) or falls back to the app workspace.
-- Per-session sandbox-mode selection relies on DSH's default preset; explicit
-  `workspace-write`/`danger-full-access` toggling lands with the mode UI.
+- Session titles and message content are rendered by the DSH UI; the management page
+  works on session files (id, workspace, size, mtime) and does not parse zstd session
+  content, so in-app rename is not offered there.
+- Import expects a folder literally named `session-<uuid>` containing
+  `session.jsonl.zstd` (the DSH export shape).
+- Project creation on first run materializes into the legacy `AppConfig`; the old mode
+  switcher IPC remains functional for backwards compatibility.
 
-## Next steps (v0.0.5)
+## Next steps
 
-1. Session persistence and history (search/rename/delete/import/export).
-2. Projects and workspaces.
-3. Restart recovery.
-4. Image and common file handling.
+1. v0.0.6: web search/fetch, MCP management, skills, plugin permission manifest,
+   subagent/plan/task UI.
+2. v0.0.7: tray, notifications, launch-at-login, log viewer, diagnostics export.
+3. v0.0.8: Windows/macOS/Linux CI builds, installers + checksums, security tests.
+4. v0.0.9 → v0.1.0: release-candidate hardening, docs, and full acceptance.

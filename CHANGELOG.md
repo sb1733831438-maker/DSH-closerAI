@@ -5,6 +5,27 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.5] - 2026-08-18
+
+### Added
+
+- DSH session persistence verified end-to-end: a headless DSH run against the mock
+  provider creates a durable `session.jsonl.zstd` record under `DSH_HOME/sessions`, and
+  prior records survive a second run (restart recovery).
+- Session history service (`SessionStore`): list DSH session directories with size/mtime
+  metadata, delete, export to a chosen folder, and import a `session-<uuid>` folder back
+  into the active workspace — all path-validated to stay inside the sessions root.
+- Projects (`ProjectStore`): named Chat/Work/Code projects with an optional Code workspace
+  directory; the active project drives the DSH preset + child working directory and is
+  restored on relaunch.
+- Management page (CloserAI 工作区): reachable via menu / `Ctrl+Shift+M` / `closerai://manage`,
+  lists projects and session history with activate/delete/export/import, native folder picker
+  dialogs, and a back-to-chat action.
+- Fixed the hardened window's navigation lock so the app's own renderer entry page (any
+  query) is navigable; previously loading the manage page from the DSH UI crashed the
+  renderer.
+- Smoke test now also verifies the management page mounts and renders its real content.
+
 ## [0.0.1] - 2026-08-14
 
 ### Added

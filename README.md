@@ -13,7 +13,7 @@ OS-keychain secrets, and a plugin safety model — while delegating the agent ru
 
 ## Status
 
-**Pre-release — v0.0.4.** The project is under active construction toward a v0.1.0 daily-use
+**Pre-release — v0.0.5.** The project is under active construction toward a v0.1.0 daily-use
 release. See [`docs/STATUS.md`](docs/STATUS.md) for the current milestone and
 [`docs/EXECUTION_PLAN.md`](docs/EXECUTION_PLAN.md) for the full roadmap.
 
@@ -25,7 +25,8 @@ release. See [`docs/STATUS.md`](docs/STATUS.md) for the current milestone and
 | v0.0.2  | Desktop shell: DSH supervisor + hardened Electron window                         | Released    |
 | v0.0.3  | Onboarding, OS-keychain secrets, DeepSeek/OpenAI-compatible providers, mock mode | Released    |
 | v0.0.4  | Chat / Work / Code permission-isolated profiles                                  | Released    |
-| v0.0.5  | Daily conversation: session persistence, history, projects, file handling        | In progress |
+| v0.0.5  | Daily conversation: session persistence, history, projects, file handling        | Released    |
+| v0.0.6  | Extensions and Web: search, MCP, skills, plugin manifest, agent UI               | In progress |
 
 ### What works today
 
@@ -36,6 +37,11 @@ release. See [`docs/STATUS.md`](docs/STATUS.md) for the current milestone and
 - API keys encrypted with the OS keychain and injected only into the DSH child environment.
 - Three isolation modes: **Chat** (no shell/filesystem), **Work** (app-sandbox filesystem, no
   shell), **Code** (full shell/filesystem/terminal/plans/subagents over an authorized directory).
+- Conversation persistence: sessions are stored locally under a stable home directory and survive
+  restarts; a management page (menu / `Ctrl+Shift+M`) lists projects and session history with
+  activate, delete, export, and import (native folder pickers).
+- Projects: named Chat/Work/Code projects with an optional Code workspace directory; the active
+  project is restored on relaunch.
 
 ## Principles
 
