@@ -180,6 +180,16 @@ export function Manage(): React.JSX.Element {
     }
   }
 
+  const setLoginItem = async (enabled: boolean): Promise<void> => {
+    setBusy(true)
+    try {
+      flash(await window.closerai.setLaunchAtLogin(enabled))
+      await refresh()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const onSaveCapabilities = async (): Promise<void> => {
     if (caps === null) return
     setBusy(true)
@@ -345,6 +355,14 @@ export function Manage(): React.JSX.Element {
                   onChange={(e) => setCaps({ ...caps, skills: e.target.checked })}
                 />
                 技能 Skills（Code 模式）
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={state.launchAtLogin}
+                  onChange={(e) => void setLoginItem(e.target.checked)}
+                />
+                开机启动（系统托盘）
               </label>
             </div>
             <button className="primary" disabled={busy} onClick={() => void onSaveCapabilities()}>

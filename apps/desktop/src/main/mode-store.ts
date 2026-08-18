@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import type { AppConfig, Mode } from '../shared/types.js'
 
-const DEFAULT_CONFIG: AppConfig = { mode: 'chat', workspaceDir: null }
+const DEFAULT_CONFIG: AppConfig = { mode: 'chat', workspaceDir: null, launchAtLogin: false }
 
 function isMode(value: unknown): value is Mode {
   return value === 'chat' || value === 'work' || value === 'code'
@@ -24,7 +24,8 @@ export class AppConfigStore {
       const record = parsed as Record<string, unknown>
       const mode = isMode(record.mode) ? record.mode : DEFAULT_CONFIG.mode
       const workspaceDir = typeof record.workspaceDir === 'string' ? record.workspaceDir : null
-      return { mode, workspaceDir }
+      const launchAtLogin = typeof record.launchAtLogin === 'boolean' ? record.launchAtLogin : false
+      return { mode, workspaceDir, launchAtLogin }
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { ...DEFAULT_CONFIG }
       throw error

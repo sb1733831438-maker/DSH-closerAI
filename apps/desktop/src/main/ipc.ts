@@ -50,6 +50,10 @@ export interface IpcDeps {
   diagnosticsLogs: () => DiagnosticLogLine[]
   /** Supervisor state for the diagnostics snapshot. */
   supervisorStatus: () => { state: string; pid: number | null }
+  /** Read the OS login-item state. */
+  getLaunchAtLogin: () => boolean
+  /** Apply the login-item state (config + OS), then refresh the tray menu. */
+  setLaunchAtLogin: (enabled: boolean) => void
 }
 
 function ok(): OpResult {
@@ -75,6 +79,7 @@ function applyProjectToConfig(configStore: AppConfigStore, projectStore: Project
       active.mode === 'code' && active.workspaceDir !== null
         ? active.workspaceDir
         : current.workspaceDir,
+    launchAtLogin: current.launchAtLogin,
   }
   configStore.write(next)
 }
@@ -220,6 +225,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
       sessions,
       capabilities: deps.capabilitiesStore.read(),
       permissions: MODE_PERMISSIONS,
+      launchAtLogin: deps.getLaunchAtLogin(),
       backendUrl: deps.backendUrl(),
     }
   })
@@ -287,6 +293,17 @@ export function registerIpcHandlers(deps: IpcDeps): void {
       const file = join(destDir, 'closerai-diagnostics-' + Date.now() + '.txt')
       await writeFile(file, renderDiagnosticsReport(diag), 'utf8')
       return { ok: true, path: file }
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.launchAtLoginGet, (): boolean => deps.getLaunchAtLogin())
+
+  ipcMain.handle(IPC.launchAtLoginSet, (_event, enabled: boolean): OpResult => {
+    try {
+      deps.setLaunchAtLogin(enabled)
+      return ok()
     } catch (error) {
       return fail(error)
     }

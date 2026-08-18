@@ -29,6 +29,8 @@ const IPC = {
   capsSet: 'caps:set',
   appDiagnostics: 'app:diagnostics',
   appExportDiagnostics: 'app:export-diagnostics',
+  launchAtLoginGet: 'app:launch-at-login:get',
+  launchAtLoginSet: 'app:launch-at-login:set',
 }
 
 /** @type {import('../shared/ipc').CloserAiBridge} */

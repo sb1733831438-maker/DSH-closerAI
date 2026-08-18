@@ -36,6 +36,8 @@ export interface AppConfig {
   mode: Mode
   /** The authorized directory for Code mode; null until the user picks one. */
   workspaceDir: string | null
+  /** Whether the app should start at login (tray toggle). */
+  launchAtLogin: boolean
 }
 
 /** A user-defined project: a named workspace + mode combination. */
@@ -89,6 +91,7 @@ export interface AppState {
   sessions: SessionEntry[]
   capabilities: Capabilities
   permissions: ModePermissions[]
+  launchAtLogin: boolean
   backendUrl: string | null
 }
 
