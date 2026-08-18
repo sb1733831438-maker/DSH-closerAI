@@ -87,19 +87,12 @@ Nothing at the moment.
 2. v0.0.9 → v0.1.0: release-candidate hardening, docs, and full acceptance.
 3. v0.0.9 → v0.1.0: release-candidate hardening, docs, and full acceptance.
 
-## Packaging status (v0.0.8, WIP)
+## Packaging status (v0.0.8 — RELEASED)
 
-- Linux CI cross-build of the Windows installer WORKS: the release-build
-  workflow (electron-builder wine container) produces CloserAI-*-Setup-x64.exe
-  + SHA256SUMS.txt on every dispatch; wine HOME/WINEPREFIX fixes applied.
-- Root cause of the packaged-runtime blocker is now precise: electron-builder's
-  node collector packs only the dependencies reachable from package.json and
-  DROPS DSH's ~180 peer/optional plugins (cordis-plugin-group, dsh-timeout,
-  dsh-fs, dsh-shell, dsh-llm, dsh-tool-*, dsh-client-*, ...). Even a Linux
-  cross-build (where pnpm symlinks work) still misses them.
-- Fix: afterPack hook replaces the packaged node_modules with the complete
-  pnpm-deploy tree. The mechanism runs, but materializing 683MB of symlinks
-  (~3.3GB of real files) inside the container is too slow (25+ min) — the
-  remaining work is a fast, Windows-safe way to ship the full tree
-  (e.g. materialize once into a tar.gz in CI, or an npm-flat production
-  install). Dev app, installer build, and the verify step are all in place.
+- The Windows installer `CloserAI-0.0.8-Setup-x64.exe` + `SHA256SUMS.txt` are built by
+  a Windows CI runner (electron-builder native; no wine) via the release-build workflow.
+- Packaged runtime fix: an afterPack hook overlays a flat npm install of the DSH runtime
+  (no symlinks, Windows natives, includes the peer/optional plugins the collector drops)
+  onto the collected app node_modules.
+- Verified end-to-end: fresh install to a clean directory, packaged-app smoke passes
+  (onboarding → DSH UI → management page, exit 0); SHA-256 matches.

@@ -193,3 +193,16 @@ toggles.
 
 **Why:** DSH's bundled runtime exposes no stable API to query its live tool roster, so a
 designed-surface manifest is honest and sufficient for transparency.
+
+## D-020 — Package the DSH runtime via a flat npm install overlaid in afterPack
+
+**Decision:** electron-builder's node collector drops DSH's ~180 peer/optional plugins
+(cordis-plugin-group, dsh-timeout, dsh-fs, dsh-shell, dsh-llm, dsh-tool-_, dsh-client-_, ...),
+so the app node_modules is overlaid after packing with a flat `npm install` of
+`@deepseek-ai/dsh` (no symlinks — Windows-safe — and the correct native modules when
+installed on the build OS). The installer is built on a Windows runner to get those
+natives.
+
+**Why:** pnpm's isolated layout (symlinks into a virtual store) cannot be packed
+reliably by electron-builder on any OS; a flat npm tree is small (258 MB vs 683 MB),
+has no symlinks, and boots DSH unchanged.

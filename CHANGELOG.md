@@ -5,99 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.8] - 2026-08-18
+
+### Added
+
+- First official Windows installer: `CloserAI-0.0.8-Setup-x64.exe` built by a
+  Windows CI runner (electron-builder, no wine), shipped with a SHA-256 checksum.
+- Packaged runtime fix: the app node_modules is overlaid with a flat npm install of
+  the DSH runtime (afterPack hook), so the packaged app resolves every DSH plugin
+  (cordis, dsh-timeout, dsh-fs, ...) that electron-builder's collector drops.
+- Release workflow: dispatchable and tag-triggered; builds the installer, verifies
+  the packaged DSH tree, computes SHA-256, and attaches both to the GitHub Release.
+
+### Verified
+
+- Fresh install to a clean directory, then the packaged app smoke passes end-to-end:
+  onboarding → DeepSeek Harness UI mounts → management page renders real content
+  (exit 0).
+
 ## [0.0.7] - 2026-08-18
 
 ### Added
 
 - System tray with quick actions (返回对话 / 工作区与历史 / 开机启动 / 退出); closing the
-  window now keeps the app running in the tray instead of quitting.
-- Native notifications when the DSH backend stops or recovers after a crash.
-- Launch-at-login toggle (tray menu + management page), applied via the OS login item.
-- Log viewer and diagnostics export (already landed in v0.0.6) complete the v0.0.7
-  "Native Desktop" surface.
-
-## [0.0.6] - 2026-08-18
-
-### Added
-
-- Capability toggles for the Chat / Work / Code presets (management page): web search,
-  web fetch, and skills; presets are re-rendered at install time, so no DSH core changes.
-- Diagnostics view + export (management page): DSH supervisor state, session/project
-  summary, and the most recent child logs; every log line is redacted in the main process
-  (sk- keys, bearer tokens, key=value secrets) before it reaches the renderer or a file.
-- Per-mode permission manifest (management page): the designed Chat / Work / Code
-  capability surface, so users can see what each mode may do.
-
-### Known scope
-
-- MCP server management is deferred: DSH's MCP config schema is not discoverable from the
-  bundled runtime, so shipping a guessed config would be broken. Subagent / plan / task
-  status is rendered natively by the DSH UI.
-
-## [0.0.5] - 2026-08-18
-
-### Added
-
-- DSH session persistence verified end-to-end: a headless DSH run against the mock
-  provider creates a durable `session.jsonl.zstd` record under `DSH_HOME/sessions`, and
-  prior records survive a second run (restart recovery).
-- Session history service (`SessionStore`): list DSH session directories with size/mtime
-  metadata, delete, export to a chosen folder, and import a `session-<uuid>` folder back
-  into the active workspace — all path-validated to stay inside the sessions root.
-- Projects (`ProjectStore`): named Chat/Work/Code projects with an optional Code workspace
-  directory; the active project drives the DSH preset + child working directory and is
-  restored on relaunch.
-- Management page (CloserAI 工作区): reachable via menu / `Ctrl+Shift+M` / `closerai://manage`,
-  lists projects and session history with activate/delete/export/import, native folder picker
-  dialogs, and a back-to-chat action.
-- Fixed the hardened window's navigation lock so the app's own renderer entry page (any
-  query) is navigable; previously loading the manage page from the DSH UI crashed the
-  renderer.
-- Smoke test now also verifies the management page mounts and renders its real content.
-
-## [0.0.1] - 2026-08-14
-
-### Added
-
-- Repository bootstrap: pnpm workspace, TypeScript, ESLint, Prettier, Vitest.
-- Deterministic OpenAI-compatible mock provider (`@closerai/mock-provider`).
-- MIT license, README, CONTRIBUTING, SECURITY, and architecture/status/decision docs.
-- GitHub Actions CI running format/lint/typecheck/build/test on Linux, macOS, and Windows.
-- Public GitHub repository, topics, annotated `v0.0.1` tag, and Release.
-
-## [0.0.2] - 2026-08-14
-
-### Added
-
-- DSH child-process supervisor (`@closerai/supervisor`): random loopback port, stdout URL
-  parsing, TCP health checks, crash-restart with backoff, graceful shutdown.
-- Hardened Electron shell (`apps/desktop`): single instance, `closerai://` deep links, strict
-  CSP, navigation lock, external links to the system browser, permission denial, minimal
-  sandboxed preload.
-- Bundled DeepSeek Harness (`@deepseek-ai/dsh@0.1.0-rc.6`) launched via
-  `ELECTRON_RUN_AS_NODE` + `--expose-internals`, and Electron pinned to `43.4.0`.
-- `--smoke-test` mode that verifies the DSH UI mounts in the hardened window.
-
-## [0.0.3] - 2026-08-14
-
-### Added
-
-- First-run onboarding UI (React + Vite, Chinese): DeepSeek, OpenAI-compatible, and Mock modes.
-- Provider profiles stored separately from secrets; API keys encrypted via Electron `safeStorage`
-  (OS keychain) and injected into the DSH child environment only.
-- Endpoint + model catalog written into DSH's `llm-deepseek` settings; the DeepSeek adapter
-  doubles as the generic OpenAI-compatible adapter.
-- Connectivity probe with clear success/failure feedback.
-- Mock mode running the bundled `@closerai/mock-provider` locally.
-- Smoke test covering both the onboarding UI and the DSH UI mount.
-
-## [0.0.4] - 2026-08-14
-
-### Added
-
-- Three permission-isolated agent presets installed into DSH: Chat (no shell/fs), Work
-  (app-sandbox filesystem without shell), and Code (full shell/fs/terminal/delegation).
-- Active mode routed into DSH's default preset and the child working directory, switchable
-  over the IPC bridge.
-
-## [Unreleased]
