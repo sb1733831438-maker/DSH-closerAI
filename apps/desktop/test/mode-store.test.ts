@@ -19,18 +19,22 @@ function makeStore(): AppConfigStore {
 describe('AppConfigStore', () => {
   it('defaults to chat with no workspace', () => {
     const store = makeStore()
-    expect(store.read()).toEqual({ mode: 'chat', workspaceDir: null })
+    expect(store.read()).toEqual({ mode: 'chat', workspaceDir: null, launchAtLogin: false })
   })
 
   it('persists the code mode with an authorized workspace', () => {
     const store = makeStore()
-    store.write({ mode: 'code', workspaceDir: 'C:/projects/app' })
-    expect(store.read()).toEqual({ mode: 'code', workspaceDir: 'C:/projects/app' })
+    store.write({ mode: 'code', workspaceDir: 'C:/projects/app', launchAtLogin: false })
+    expect(store.read()).toEqual({
+      mode: 'code',
+      workspaceDir: 'C:/projects/app',
+      launchAtLogin: false,
+    })
   })
 
   it('ignores an unknown mode value', () => {
     const store = makeStore()
-    store.write({ mode: 'hack' as never, workspaceDir: null })
+    store.write({ mode: 'hack' as never, workspaceDir: null, launchAtLogin: false })
     expect(store.read().mode).toBe('chat')
   })
 })

@@ -57,10 +57,10 @@ and test evidence.
 
 ## v0.0.7 — Native Desktop
 
-- [ ] Tray, notifications, launch-at-login
-- [ ] Auto-update framework
-- [ ] Log viewer and diagnostics export
-- [ ] System permission guidance
+- [x] Tray, notifications, launch-at-login
+- [ ] Auto-update framework (deferred to v0.0.8+)
+- [x] Log viewer and diagnostics export (landed in v0.0.6)
+- [ ] System permission guidance (with v0.0.8 hardening)
 
 ## v0.0.8 — Packaging and Security
 

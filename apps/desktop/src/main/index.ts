@@ -2,8 +2,8 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { app, Menu, type BrowserWindow, type MenuItemConstructorOptions } from 'electron'
 import { launchBackend, type RunningBackend } from './backend.js'
-import { DEEP_LINK_SCHEME, parseDeepLink } from './deep-link.js'
 import { CapabilitiesStore } from './capabilities.js'
+import { DEEP_LINK_SCHEME, parseDeepLink } from './deep-link.js'
 import { applyProjectToConfig, registerIpcHandlers } from './ipc.js'
 import { AppConfigStore } from './mode-store.js'
 import { MOCK_DEFAULT } from './providers.js'
@@ -12,6 +12,15 @@ import { ProjectStore } from './project-store.js'
 import { createSafeStorageCipher } from './safe-storage-cipher.js'
 import { SecretStore } from './secrets.js'
 import { SessionStore } from './session-store.js'
+import {
+  applyLaunchAtLogin,
+  createTray,
+  destroyTray,
+  getLaunchAtLogin,
+  notify,
+  updateTrayMenu,
+  type TrayDeps,
+} from './tray.js'
 import { createWindow } from './window.js'
 
 const isSmokeTest = process.argv.includes('--smoke-test')
@@ -22,6 +31,8 @@ function main(): void {
   let window: BrowserWindow | null = null
   let backend: RunningBackend | null = null
   let quitting = false
+  let trayCreated = false
+  let hasBeenReady = false
 
   const userData = app.getPath('userData')
   const providerStore = new ProviderStoreFile(join(userData, 'providers.json'))
@@ -52,16 +63,23 @@ function main(): void {
     window.focus()
   }
 
+  const ensureWindow = (): BrowserWindow => {
+    if (window === null || window.isDestroyed()) {
+      window = createWindow({ kind: 'file', path: onboardingPath })
+    }
+    return window
+  }
+
   const showManagePage = (): void => {
-    if (window === null || window.isDestroyed()) return
+    const win = ensureWindow()
     focusWindow()
-    void window.loadFile(onboardingPath, { query: { view: 'manage' } })
+    void win.loadFile(onboardingPath, { query: { view: 'manage' } })
   }
 
   const showChat = (): void => {
-    if (window === null || window.isDestroyed()) return
+    const win = ensureWindow()
     focusWindow()
-    if (backend !== null && !window.isDestroyed()) void window.loadURL(backend.dsh.url)
+    if (backend !== null) void win.loadURL(backend.dsh.url)
   }
 
   const handleDeepLink = (link: string): void => {
@@ -112,12 +130,17 @@ function main(): void {
     backend = running
 
     running.dsh.supervisor.on('ready', (status) => {
+      if (hasBeenReady) {
+        notify('CloserAI — 对话后端已就绪', 'DSH 已重新启动，可以继续对话。')
+      }
+      hasBeenReady = true
       if (status.url !== null && window !== null && !window.isDestroyed()) {
         void window.loadURL(status.url)
       }
     })
     running.dsh.supervisor.on('failed', (error) => {
       console.error('[closerai] DSH failed:', error.message)
+      notify('CloserAI — DSH 已停止', error.message)
     })
 
     setTarget({ kind: 'url', url: running.dsh.url })
@@ -129,7 +152,12 @@ function main(): void {
         )
         const title = await window!.webContents.executeJavaScript('document.title')
         console.log(
-          `[closerai] smoke: loaded ${running.dsh.url} title="${title}" rootChildren=${rootChildren}`,
+          '[closerai] smoke: loaded ' +
+            running.dsh.url +
+            ' title="' +
+            title +
+            '" rootChildren=' +
+            rootChildren,
         )
         const chatOk = typeof rootChildren === 'number' && rootChildren > 0
         if (!chatOk) {
@@ -157,10 +185,13 @@ function main(): void {
             if (!manageHasContent) await new Promise((resolve) => setTimeout(resolve, 100))
           }
           console.log(
-            `[closerai] smoke: manage page title="${manageTitle}" rootChildren=${manageChildren} content=${manageHasContent}`,
+            '[closerai] smoke: manage page title="' +
+              manageTitle +
+              '" rootChildren=' +
+              manageChildren +
+              ' content=' +
+              manageHasContent,
           )
-          // rootChildren > 0 plus the manage heading proves getAppState()
-          // resolved and the full workspace/history UI rendered.
           const manageOk =
             typeof manageChildren === 'number' && manageChildren > 0 && manageHasContent === true
           await stopBackend()
@@ -172,7 +203,7 @@ function main(): void {
         }
       })
       window!.webContents.once('did-fail-load', async (_event, code, description) => {
-        console.error(`[closerai] smoke: failed to load (${code}) ${description}`)
+        console.error('[closerai] smoke: failed to load (' + code + ') ' + description)
         await stopBackend()
         app.exit(1)
       })
@@ -225,6 +256,23 @@ function main(): void {
     // back into the same project/workspace as last time.
     applyProjectToConfig(configStore, projectStore)
 
+    const trayDeps: TrayDeps = {
+      onOpenChat: showChat,
+      onOpenManage: showManagePage,
+      onQuit: () => {
+        quitting = true
+        destroyTray()
+        app.quit()
+      },
+      getLaunchAtLogin: () => getLaunchAtLogin(),
+      setLaunchAtLogin: (enabled) => {
+        const config = configStore.read()
+        configStore.write({ ...config, launchAtLogin: enabled })
+        applyLaunchAtLogin(enabled)
+        if (trayCreated) updateTrayMenu(trayDeps)
+      },
+    }
+
     registerIpcHandlers({
       providerStore,
       secretStore: getSecretStore(),
@@ -241,12 +289,21 @@ function main(): void {
         backend === null
           ? { state: 'idle', pid: null }
           : { state: backend.dsh.supervisor.getState(), pid: backend.dsh.supervisor.getPid() },
+      getLaunchAtLogin: () => getLaunchAtLogin(),
+      setLaunchAtLogin: (enabled) => {
+        const config = configStore.read()
+        configStore.write({ ...config, launchAtLogin: enabled })
+        applyLaunchAtLogin(enabled)
+        if (trayCreated) updateTrayMenu(trayDeps)
+      },
       onComplete: () => {
         void startBackendForActiveProfile()
       },
     })
 
     installMenu()
+
+    trayCreated = createTray(trayDeps) !== null
 
     if (isSmokeTest && providerStore.getActive() === null) {
       // Phase 1: the onboarding UI must mount from a clean state, then the
@@ -256,7 +313,7 @@ function main(): void {
         const mounted = await window!.webContents.executeJavaScript(
           "document.getElementById('root')?.childElementCount ?? 0",
         )
-        console.log(`[closerai] smoke: onboarding mounted rootChildren=${mounted}`)
+        console.log('[closerai] smoke: onboarding mounted rootChildren=' + mounted)
         if (mounted <= 0) {
           app.exit(1)
           return
@@ -282,7 +339,7 @@ function main(): void {
   }
 
   app.on('second-instance', (_event, argv) => {
-    const link = argv.find((arg) => arg.startsWith(`${DEEP_LINK_SCHEME}://`))
+    const link = argv.find((arg) => arg.startsWith(DEEP_LINK_SCHEME + '://'))
     if (link !== undefined) handleDeepLink(link)
     else focusWindow()
   })
@@ -297,6 +354,9 @@ function main(): void {
   })
 
   app.on('window-all-closed', () => {
+    // Native desktop behavior: when the tray exists, closing the window keeps
+    // the app running in the background instead of quitting.
+    if (trayCreated && !quitting) return
     if (process.platform !== 'darwin') app.quit()
   })
 

@@ -39,6 +39,8 @@ export const IPC = {
   capsSet: 'caps:set',
   appDiagnostics: 'app:diagnostics',
   appExportDiagnostics: 'app:export-diagnostics',
+  launchAtLoginGet: 'app:launch-at-login:get',
+  launchAtLoginSet: 'app:launch-at-login:set',
 } as const
 
 export interface SaveProviderInput {
@@ -80,4 +82,6 @@ export interface CloserAiBridge {
   setCapabilities(caps: Capabilities): Promise<OpResult>
   getDiagnostics(): Promise<Diagnostics>
   exportDiagnostics(destDir: string): Promise<OpResult>
+  getLaunchAtLogin(): Promise<boolean>
+  setLaunchAtLogin(enabled: boolean): Promise<OpResult>
 }

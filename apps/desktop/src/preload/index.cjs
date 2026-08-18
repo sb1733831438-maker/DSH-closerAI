@@ -29,12 +29,14 @@ const IPC = {
   capsSet: 'caps:set',
   appDiagnostics: 'app:diagnostics',
   appExportDiagnostics: 'app:export-diagnostics',
+  launchAtLoginGet: 'app:launch-at-login:get',
+  launchAtLoginSet: 'app:launch-at-login:set',
 }
 
 /** @type {import('../shared/ipc').CloserAiBridge} */
 const api = Object.freeze({
   platform: process.platform,
-  appVersion: '0.0.6',
+  appVersion: '0.0.7',
   listProviders: () => ipcRenderer.invoke(IPC.providersList),
   getActiveProvider: () => ipcRenderer.invoke(IPC.providersActive),
   getDefaults: () => ipcRenderer.invoke(IPC.providersDefaults),

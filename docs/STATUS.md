@@ -1,18 +1,24 @@
 # Status
 
-> Last updated: 2026-08-18 — v0.0.6 released.
+> Last updated: 2026-08-18 — v0.0.7 released.
 
 ## Current milestone
 
-**v0.0.6 — Extensions and Web: complete.** Capability toggles (web search/fetch/skills),
+**v0.0.7 — Native Desktop: complete.** Tray, native notifications, and launch-at-login ship;
 projects/workspaces, session history). Next up:
-**v0.0.7 — Native Desktop** (tray, notifications, launch-at-login, diagnostics).
+**v0.0.8 — Packaging and Security** (Windows installer, checksums, security tests).
 
 ## Repository
 
 - <https://github.com/sb1733831438-maker/DSH-closerAI>
 - `main` branch, annotated `v0.0.1`–`v0.0.5` tags, matching Releases, CI green on
   Linux/macOS/Windows.
+
+## What is done (v0.0.7)
+
+- System tray with quick actions; close-to-tray keeps the app running in the background.
+- Native notifications on DSH crash and recovery.
+- Launch-at-login toggle (tray + management page), applied via the OS login item.
 
 ## What is done (v0.0.6)
 
@@ -76,7 +82,7 @@ Nothing at the moment.
 
 ## Next steps
 
-1. v0.0.7: tray, notifications, launch-at-login (log viewer + diagnostics export already ship
-   via the management page).
-2. v0.0.8: Windows/macOS/Linux CI builds, installers + checksums, security tests.
+1. v0.0.8: Windows x64 installer (electron-builder), SHA-256 checksums, CI release builds,
+   CSP/eval hardening replacement (D-009 revisit).
+2. v0.0.9 → v0.1.0: release-candidate hardening, docs, and full acceptance.
 3. v0.0.9 → v0.1.0: release-candidate hardening, docs, and full acceptance.
