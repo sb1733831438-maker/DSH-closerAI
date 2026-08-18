@@ -8,10 +8,18 @@ import {
 import type { ProviderStoreFile } from './provider-store.js'
 import type { SecretStore } from './secrets.js'
 import type { AppConfigStore } from './mode-store.js'
+import type { CapabilitiesStore } from './capabilities.js'
 import type { ProjectStore } from './project-store.js'
 import type { SessionStore } from './session-store.js'
 import { workspaceKeyFromPath } from './session-store.js'
-import type { AppConfig, AppState, CreateProjectInput, OpResult, Project } from '../shared/types.js'
+import type {
+  AppConfig,
+  AppState,
+  Capabilities,
+  CreateProjectInput,
+  OpResult,
+  Project,
+} from '../shared/types.js'
 import { IPC, type SaveProviderInput, type TestProviderInput } from '../shared/ipc.js'
 
 export interface IpcDeps {
@@ -20,6 +28,7 @@ export interface IpcDeps {
   configStore: AppConfigStore
   projectStore: ProjectStore
   sessionStore: SessionStore
+  capabilitiesStore: CapabilitiesStore
   /** The current workspace root for the active mode/project. */
   workspaceDir: () => string
   /** Called when onboarding completes, the mode changes, or a project is
@@ -199,6 +208,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
       activeProjectId: projects.activeProjectId,
       projects: projects.projects,
       sessions,
+      capabilities: deps.capabilitiesStore.read(),
       backendUrl: deps.backendUrl(),
     }
   })
@@ -210,6 +220,18 @@ export function registerIpcHandlers(deps: IpcDeps): void {
   ipcMain.handle(IPC.navManage, () => {
     deps.showManage()
     return { ok: true }
+  })
+
+  ipcMain.handle(IPC.capsGet, (): Capabilities => deps.capabilitiesStore.read())
+
+  ipcMain.handle(IPC.capsSet, (_event, caps: Capabilities): OpResult => {
+    try {
+      deps.capabilitiesStore.write(caps)
+      deps.onComplete()
+      return ok()
+    } catch (error) {
+      return fail(error)
+    }
   })
 
   ipcMain.handle(IPC.dialogPickDirectory, async (): Promise<string | null> => {

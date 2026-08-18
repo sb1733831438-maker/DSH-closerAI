@@ -1,7 +1,8 @@
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { startMockServer, type MockServer } from '@closerai/mock-provider'
-import type { Mode, ProviderProfile } from '../shared/types.js'
+import type { Capabilities, Mode, ProviderProfile } from '../shared/types.js'
+import { DEFAULT_CAPABILITIES } from './capabilities.js'
 import { writeDshAgentPresetDefault, writeDshProviderSettings } from './dsh-settings.js'
 import { startDsh, type RunningDsh } from './dsh.js'
 import { installPresets } from './presets.js'
@@ -21,6 +22,8 @@ export interface LaunchBackendOptions {
   mode: Mode
   /** Workspace root for the mode: app sandbox (work) or authorized dir (code). */
   workspaceDir: string
+  /** Capability toggles rendered into the installed agent presets. */
+  capabilities?: Capabilities
 }
 
 /**
@@ -29,7 +32,7 @@ export interface LaunchBackendOptions {
  * workspace directory.
  */
 export async function launchBackend(options: LaunchBackendOptions): Promise<RunningBackend> {
-  const { home, profile, apiKey, mode, workspaceDir } = options
+  const { home, profile, apiKey, mode, workspaceDir, capabilities } = options
   let effective = profile
   let mockServer: MockServer | null = null
 
@@ -39,7 +42,7 @@ export async function launchBackend(options: LaunchBackendOptions): Promise<Runn
   }
 
   const settingsPath = join(home, 'settings.yaml')
-  await installPresets(home)
+  await installPresets(home, capabilities ?? DEFAULT_CAPABILITIES)
   mkdirSync(workspaceDir, { recursive: true })
   writeDshProviderSettings(settingsPath, effective)
   writeDshAgentPresetDefault(settingsPath, mode)

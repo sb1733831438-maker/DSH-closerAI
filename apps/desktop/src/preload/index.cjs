@@ -25,6 +25,8 @@ const IPC = {
   navChat: 'nav:chat',
   navManage: 'nav:manage',
   dialogPickDirectory: 'dialog:pick-directory',
+  capsGet: 'caps:get',
+  capsSet: 'caps:set',
 }
 
 /** @type {import('../shared/ipc').CloserAiBridge} */

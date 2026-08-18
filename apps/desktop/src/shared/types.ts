@@ -87,5 +87,16 @@ export interface AppState {
   activeProjectId: string | null
   projects: Project[]
   sessions: SessionEntry[]
+  capabilities: Capabilities
   backendUrl: string | null
+}
+
+/** Per-mode capability toggles applied when installing the agent presets. */
+export interface Capabilities {
+  /** Whether the web search tool is mounted in Chat/Work/Code presets. */
+  webSearch: boolean
+  /** Whether the web tool may fetch page contents (fetch) in addition to search. */
+  webFetch: boolean
+  /** Whether the skills tool is mounted (Code preset). */
+  skills: boolean
 }

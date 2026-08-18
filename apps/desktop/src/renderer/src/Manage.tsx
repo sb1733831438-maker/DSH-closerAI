@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react'
-import type { AppState, Mode, OpResult, Project, SessionEntry } from '../../shared/types'
+import type {
+  AppState,
+  Capabilities,
+  Mode,
+  OpResult,
+  Project,
+  SessionEntry,
+} from '../../shared/types'
 
 const MODE_LABEL: Record<Mode, string> = {
   chat: '对话',
@@ -30,12 +37,15 @@ export function Manage(): React.JSX.Element {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [caps, setCaps] = useState<Capabilities | null>(null)
   const [name, setName] = useState('')
   const [mode, setMode] = useState<Mode>('chat')
   const [workspaceDir, setWorkspaceDir] = useState('')
 
   const refresh = async (): Promise<void> => {
-    setState(await window.closerai.getAppState())
+    const next = await window.closerai.getAppState()
+    setState(next)
+    setCaps((previous) => previous ?? { ...next.capabilities })
   }
 
   useEffect(() => {
@@ -140,13 +150,23 @@ export function Manage(): React.JSX.Element {
     }
   }
 
+  const onSaveCapabilities = async (): Promise<void> => {
+    if (caps === null) return
+    setBusy(true)
+    try {
+      flash(await window.closerai.setCapabilities(caps))
+      await refresh()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (state === null)
     return (
       <main className="shell">
         <p>加载中…</p>
       </main>
     )
-
   const activeProject = state.projects.find((p: Project) => p.id === state.activeProjectId) ?? null
 
   return (
@@ -247,6 +267,43 @@ export function Manage(): React.JSX.Element {
         </ul>
       </section>
 
+      <section className="card">
+        <h2>能力设置</h2>
+        <p className="hint">保存后会重新生成 Agent Preset 并重启对话后端。</p>
+        {caps !== null && (
+          <>
+            <div className="grid">
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={caps.webSearch}
+                  onChange={(e) => setCaps({ ...caps, webSearch: e.target.checked })}
+                />
+                联网搜索（Chat / Work / Code）
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={caps.webFetch}
+                  onChange={(e) => setCaps({ ...caps, webFetch: e.target.checked })}
+                />
+                网页抓取 fetch（依赖联网搜索开启）
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={caps.skills}
+                  onChange={(e) => setCaps({ ...caps, skills: e.target.checked })}
+                />
+                技能 Skills（Code 模式）
+              </label>
+            </div>
+            <button className="primary" disabled={busy} onClick={() => void onSaveCapabilities()}>
+              保存能力设置
+            </button>
+          </>
+        )}
+      </section>
       <section className="card">
         <h2>会话历史</h2>
         <p className="actions">

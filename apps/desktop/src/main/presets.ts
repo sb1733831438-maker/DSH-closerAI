@@ -1,7 +1,8 @@
-import { cp, mkdir } from 'node:fs/promises'
+import { cp, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { Mode } from '../shared/types.js'
+import type { Capabilities, Mode } from '../shared/types.js'
+import { DEFAULT_CAPABILITIES, renderPresetYaml } from './capabilities.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 // Two levels up from src/main (or dist/main) is the package root, which holds
@@ -22,13 +23,29 @@ export function isMode(value: string): value is Mode {
 }
 
 /**
- * Copy the bundled Chat/Work/Code presets into the DSH home's user-writable
+ * Install the bundled Chat/Work/Code presets into the DSH home's user-writable
  * agent-presets root, so the DSH roster discovers exactly the three modes.
+ * Capability toggles are rendered into each composition at install time.
  */
-export async function installPresets(dshHome: string): Promise<void> {
+export async function installPresets(
+  dshHome: string,
+  capabilities: Capabilities = DEFAULT_CAPABILITIES,
+): Promise<void> {
   const root = join(dshHome, '.agent-presets')
   await mkdir(root, { recursive: true })
   for (const mode of MODES) {
-    await cp(join(PRESET_SOURCE, mode), join(root, mode), { recursive: true, force: true })
+    const target = join(root, mode)
+    await mkdir(target, { recursive: true })
+    // preset.yml metadata is copied verbatim...
+    await cp(join(PRESET_SOURCE, mode, 'preset.yml'), join(target, 'preset.yml'), {
+      force: true,
+    })
+    // ...while the tool composition is rendered against the capability set.
+    const composition = await readFile(join(PRESET_SOURCE, mode, 'agent.cordis.yml'), 'utf8')
+    await writeFile(
+      join(target, 'agent.cordis.yml'),
+      renderPresetYaml(composition, capabilities),
+      'utf8',
+    )
   }
 }
