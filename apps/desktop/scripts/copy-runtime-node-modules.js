@@ -1,8 +1,8 @@
 // electron-builder afterPack hook: replace the collected (partial)
 // node_modules with the complete production tree produced by pnpm deploy.
 // electron-builder's node collector drops DSH's peer/optional plugins, so we
-// overwrite the packaged node_modules with the full deploy tree. On Linux CI
-// (symlinks available) we dereference so the result is self-contained.
+// overwrite the packaged node_modules with the full deploy tree. rsync -a -L
+// dereferences symlinks so the packaged tree is self-contained for Windows.
 // Source passed via env CLOSERAI_RUNTIME_NODE_MODULES.
 import { execFileSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
@@ -16,15 +16,6 @@ export async function afterPack(context) {
   const target = join(context.appOutDir, 'resources', 'app', 'node_modules')
   rmSync(target, { recursive: true, force: true })
   mkdirSync(dirname(target), { recursive: true })
-  // tar -h dereferences symlinks; avoids cp 'copy directory into itself'
-  const srcParent = dirname(source)
-  const tgtParent = dirname(target)
-  execFileSync(
-    'bash',
-    [
-      '-c',
-      "cd '" + srcParent + "' && tar -h -cf - node_modules | (cd '" + tgtParent + "' && tar -xf -)",
-    ],
-    { stdio: 'inherit' },
-  )
+  // rsync -a -L: archive mode, dereference symlinks; no cp 'into itself' check
+  execFileSync('rsync', ['-a', '-L', source + '/', target + '/'], { stdio: 'inherit' })
 }
