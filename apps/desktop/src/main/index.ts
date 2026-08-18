@@ -1,14 +1,16 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { app, type BrowserWindow } from 'electron'
+import { app, Menu, type BrowserWindow, type MenuItemConstructorOptions } from 'electron'
 import { launchBackend, type RunningBackend } from './backend.js'
 import { DEEP_LINK_SCHEME, parseDeepLink } from './deep-link.js'
-import { registerIpcHandlers } from './ipc.js'
+import { applyProjectToConfig, registerIpcHandlers } from './ipc.js'
 import { AppConfigStore } from './mode-store.js'
 import { MOCK_DEFAULT } from './providers.js'
 import { ProviderStoreFile } from './provider-store.js'
+import { ProjectStore } from './project-store.js'
 import { createSafeStorageCipher } from './safe-storage-cipher.js'
 import { SecretStore } from './secrets.js'
+import { SessionStore } from './session-store.js'
 import { createWindow } from './window.js'
 
 const isSmokeTest = process.argv.includes('--smoke-test')
@@ -23,7 +25,9 @@ function main(): void {
   const userData = app.getPath('userData')
   const providerStore = new ProviderStoreFile(join(userData, 'providers.json'))
   const configStore = new AppConfigStore(join(userData, 'app-config.json'))
+  const projectStore = new ProjectStore(join(userData, 'projects.json'))
   const dshHome = join(userData, 'dsh-home')
+  const sessionStore = new SessionStore(join(dshHome, 'sessions'))
   let secretStore: SecretStore | null = null
 
   const getSecretStore = (): SecretStore => {
@@ -46,8 +50,24 @@ function main(): void {
     window.focus()
   }
 
+  const showManagePage = (): void => {
+    if (window === null || window.isDestroyed()) return
+    focusWindow()
+    void window.loadFile(onboardingPath, { query: { view: 'manage' } })
+  }
+
+  const showChat = (): void => {
+    if (window === null || window.isDestroyed()) return
+    focusWindow()
+    if (backend !== null && !window.isDestroyed()) void window.loadURL(backend.dsh.url)
+  }
+
   const handleDeepLink = (link: string): void => {
-    if (parseDeepLink(link) !== null) focusWindow()
+    const parsed = parseDeepLink(link)
+    if (parsed === null) return
+    if (parsed.action === 'manage') showManagePage()
+    else if (parsed.action === 'chat') showChat()
+    else focusWindow()
   }
 
   const setTarget = (
@@ -108,9 +128,45 @@ function main(): void {
         console.log(
           `[closerai] smoke: loaded ${running.dsh.url} title="${title}" rootChildren=${rootChildren}`,
         )
-        const ok = typeof rootChildren === 'number' && rootChildren > 0
-        await stopBackend()
-        app.exit(ok ? 0 : 1)
+        const chatOk = typeof rootChildren === 'number' && rootChildren > 0
+        if (!chatOk) {
+          await stopBackend()
+          app.exit(1)
+          return
+        }
+        // v0.0.5: the management (workspace & history) page must also mount.
+        try {
+          // loadFile resolves once the page finishes loading; a separate
+          // did-finish-load wait here would race and hang.
+          await window!.loadFile(onboardingPath, { query: { view: 'manage' } })
+          const manageChildren = await window!.webContents.executeJavaScript(
+            "document.getElementById('root')?.childElementCount ?? 0",
+          )
+          const manageTitle = await window!.webContents.executeJavaScript('document.title')
+          // getAppState() is async over IPC; poll briefly for the real content
+          // (the manage heading) instead of racing the initial "加载中…" frame.
+          let manageHasContent = false
+          for (let attempt = 0; attempt < 50 && !manageHasContent; attempt += 1) {
+            manageHasContent =
+              (await window!.webContents.executeJavaScript(
+                "document.body.innerText.includes('CloserAI 工作区')",
+              )) === true
+            if (!manageHasContent) await new Promise((resolve) => setTimeout(resolve, 100))
+          }
+          console.log(
+            `[closerai] smoke: manage page title="${manageTitle}" rootChildren=${manageChildren} content=${manageHasContent}`,
+          )
+          // rootChildren > 0 plus the manage heading proves getAppState()
+          // resolved and the full workspace/history UI rendered.
+          const manageOk =
+            typeof manageChildren === 'number' && manageChildren > 0 && manageHasContent === true
+          await stopBackend()
+          app.exit(manageOk ? 0 : 1)
+        } catch (error) {
+          console.error('[closerai] smoke: manage page failed:', error)
+          await stopBackend()
+          app.exit(1)
+        }
       })
       window!.webContents.once('did-fail-load', async (_event, code, description) => {
         console.error(`[closerai] smoke: failed to load (${code}) ${description}`)
@@ -120,15 +176,68 @@ function main(): void {
     }
   }
 
+  const installMenu = (): void => {
+    const template: MenuItemConstructorOptions[] = [
+      {
+        label: 'CloserAI',
+        submenu: [
+          { label: '工作区与历史', accelerator: 'CmdOrCtrl+Shift+M', click: showManagePage },
+          { label: '返回对话', accelerator: 'CmdOrCtrl+Shift+C', click: showChat },
+          { type: 'separator' },
+          { role: 'quit', label: '退出' },
+        ],
+      },
+      {
+        label: '编辑',
+        submenu: [
+          { role: 'undo', label: '撤销' },
+          { role: 'redo', label: '重做' },
+          { type: 'separator' },
+          { role: 'cut', label: '剪切' },
+          { role: 'copy', label: '复制' },
+          { role: 'paste', label: '粘贴' },
+          { role: 'selectAll', label: '全选' },
+        ],
+      },
+      {
+        label: '视图',
+        submenu: [
+          { role: 'reload', label: '刷新' },
+          { role: 'toggleDevTools', label: '开发者工具' },
+          { type: 'separator' },
+          { role: 'resetZoom', label: '重置缩放' },
+          { role: 'zoomIn', label: '放大' },
+          { role: 'zoomOut', label: '缩小' },
+          { type: 'separator' },
+          { role: 'togglefullscreen', label: '全屏' },
+        ],
+      },
+    ]
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+  }
+
   const boot = async (): Promise<void> => {
+    // Restart recovery: an activated project's mode/workspace is re-applied to
+    // the AppConfig before the backend boots, so relaunching drops the user
+    // back into the same project/workspace as last time.
+    applyProjectToConfig(configStore, projectStore)
+
     registerIpcHandlers({
       providerStore,
       secretStore: getSecretStore(),
       configStore,
+      projectStore,
+      sessionStore,
+      workspaceDir: workspaceDirFor,
+      backendUrl: () => (backend === null ? null : backend.dsh.url),
+      showChat,
+      showManage: showManagePage,
       onComplete: () => {
         void startBackendForActiveProfile()
       },
     })
+
+    installMenu()
 
     if (isSmokeTest && providerStore.getActive() === null) {
       // Phase 1: the onboarding UI must mount from a clean state, then the
@@ -164,9 +273,9 @@ function main(): void {
   }
 
   app.on('second-instance', (_event, argv) => {
-    focusWindow()
     const link = argv.find((arg) => arg.startsWith(`${DEEP_LINK_SCHEME}://`))
     if (link !== undefined) handleDeepLink(link)
+    else focusWindow()
   })
 
   app.on('render-process-gone', (_event, _webContents, details) => {

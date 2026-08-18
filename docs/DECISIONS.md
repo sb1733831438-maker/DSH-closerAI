@@ -136,3 +136,33 @@ default preset and the child cwd.
 authorized directory gives real containment rather than prompt-level restriction. The preset
 tool-set is the capability surface, which the goal requires to be a profile combination, not
 wording alone.
+
+## D-014 — Session history is file-level, DSH owns the content
+
+**Decision:** CloserAI manages sessions at the directory level under
+`DSH_HOME/sessions/<workspaceKey>/session-<uuid>/` — list with id/workspace/size/mtime,
+delete, export, and import. It never parses or rewrites `session.jsonl.zstd`.
+
+**Why:** DSH renders titles and messages in its own UI and owns the zstd-encoded records;
+reading them in-app would require a zstd dependency plus re-encoding risk. Whole-directory
+operations are safe, sufficient for backup/restore, and keep a hard ownership boundary.
+
+## D-015 — Projects materialize into the existing AppConfig
+
+**Decision:** Activating a project writes the project's mode + workspace into the legacy
+`app-config.json` (the same values the mode switcher used), then restarts DSH.
+
+**Why:** The backend, presets, and workspace routing already key off AppConfig; materializing
+avoids touching the proven mode-routing path while giving projects the same effect. The old
+mode IPC stays functional for backwards compatibility.
+
+## D-016 — Navigation lock exempts the app's own renderer entry
+
+**Decision:** The hardened window's `will-navigate` handler allows navigation to the app's
+own renderer `index.html` (any query — the onboarding and manage views), while everything
+else stays locked to the DSH origin or is denied.
+
+**Why:** Loading `index.html?view=manage` from the DSH UI was blocked by the same-origin
+rule and crashed the renderer mid-navigation. Exempting one trusted app file keeps the lock
+strict for everything else and fixes the manage page. **Revisit** in v0.0.8 when the CSP
+script hashes land.

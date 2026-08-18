@@ -41,10 +41,11 @@ and test evidence.
 
 ## v0.0.5 — Daily Conversation
 
-- [ ] Session persistence, history search/rename/delete/import/export
-- [ ] Projects and workspaces
-- [ ] Restart recovery
-- [ ] Image and common file handling
+- [x] Session persistence verified end-to-end (DSH_HOME/sessions across restarts)
+- [x] History list/delete/export/import (management page; in-app title rename stays in DSH UI)
+- [x] Projects and workspaces (named Chat/Work/Code projects, active project drives preset + cwd)
+- [x] Restart recovery (stable DSH_HOME + active project restored on relaunch)
+- [x] File handling (DSH attachments + app-level session file management); image handling is native to the DSH UI
 
 ## v0.0.6 — Extensions and Web
 
