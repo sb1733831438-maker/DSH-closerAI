@@ -1,12 +1,12 @@
 // electron-builder afterPack hook: replace the collected (partial)
-// node_modules with the complete production tree produced by pnpm deploy.
-// electron-builder's node collector drops DSH's peer/optional plugins, so we
-// overwrite the packaged node_modules with the full deploy tree. fs.cp with
-// dereference materializes symlinks so the result is self-contained (no
-// external binaries needed inside the container).
+// node_modules with the complete runtime tree produced by an npm flat
+// install (@deepseek-ai/dsh + @closerai/* file links). npm's flat layout has
+// no symlinks (Windows-safe) and includes DSH's peer/optional plugins that
+// electron-builder's collector drops; a plain cp -r is therefore fast.
 // Source passed via env CLOSERAI_RUNTIME_NODE_MODULES.
-import { cp, mkdir, rm } from 'node:fs/promises'
+import { execFileSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
+import { mkdirSync, rmSync } from 'node:fs'
 
 export async function afterPack(context) {
   const source = process.env.CLOSERAI_RUNTIME_NODE_MODULES
@@ -14,7 +14,7 @@ export async function afterPack(context) {
     throw new Error('CLOSERAI_RUNTIME_NODE_MODULES must point at the runtime node_modules')
   }
   const target = join(context.appOutDir, 'resources', 'app', 'node_modules')
-  await rm(target, { recursive: true, force: true })
-  await mkdir(dirname(target), { recursive: true })
-  await cp(source, target, { recursive: true, dereference: true })
+  rmSync(target, { recursive: true, force: true })
+  mkdirSync(dirname(target), { recursive: true })
+  execFileSync('cp', ['-r', source, target], { stdio: 'inherit' })
 }
