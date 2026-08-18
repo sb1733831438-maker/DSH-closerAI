@@ -34,11 +34,6 @@ jobs:
 
       # Linux preserves pnpm's symlinked layout, so electron-builder's
       # collector keeps the DSH runtime's full dependency tree.
-      - name: Install wine (for Windows packaging)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends wine64
-
       - name: Package Windows installer
         run: pnpm --filter @closerai/desktop run pack
 
