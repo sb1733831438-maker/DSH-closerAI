@@ -13,6 +13,7 @@ jobs:
   windows-installer:
     name: windows-installer
     runs-on: ubuntu-latest
+    container: electronuserland/builder:wine
     steps:
       - uses: actions/checkout@v4
 
@@ -31,8 +32,8 @@ jobs:
       - name: Build workspace deps + desktop
         run: pnpm -r build
 
-      # Linux preserves pnpm's symlinked layout, so electron-builder keeps
-      # the DSH runtime's full dependency tree in the package.
+      # Linux preserves pnpm's symlinked layout, so electron-builder's
+      # collector keeps the DSH runtime's full dependency tree.
       - name: Install wine (for Windows packaging)
         run: |
           sudo apt-get update
