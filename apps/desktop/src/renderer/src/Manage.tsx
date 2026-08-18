@@ -140,7 +140,12 @@ export function Manage(): React.JSX.Element {
     }
   }
 
-  if (state === null) return <main className="shell"><p>加载中…</p></main>
+  if (state === null)
+    return (
+      <main className="shell">
+        <p>加载中…</p>
+      </main>
+    )
 
   const activeProject = state.projects.find((p: Project) => p.id === state.activeProjectId) ?? null
 
@@ -171,7 +176,11 @@ export function Manage(): React.JSX.Element {
         <div className="grid">
           <label>
             名称
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例如：个人助手 / 文档处理 / 我的代码库" />
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="例如：个人助手 / 文档处理 / 我的代码库"
+            />
           </label>
           <label>
             模式
@@ -185,8 +194,20 @@ export function Manage(): React.JSX.Element {
             <label>
               工作目录
               <div className="inline">
-                <input value={workspaceDir} onChange={(e) => setWorkspaceDir(e.target.value)} placeholder="授权目录绝对路径" />
-                <button onClick={() => void window.closerai.pickDirectory().then((d) => d !== null && setWorkspaceDir(d))}>浏览…</button>
+                <input
+                  value={workspaceDir}
+                  onChange={(e) => setWorkspaceDir(e.target.value)}
+                  placeholder="授权目录绝对路径"
+                />
+                <button
+                  onClick={() =>
+                    void window.closerai
+                      .pickDirectory()
+                      .then((d) => d !== null && setWorkspaceDir(d))
+                  }
+                >
+                  浏览…
+                </button>
               </div>
             </label>
           )}
@@ -205,13 +226,20 @@ export function Manage(): React.JSX.Element {
               <div className="row">
                 <div>
                   <strong>{p.name}</strong>
-                  <span className="meta">{MODE_LABEL[p.mode]}{p.workspaceDir !== null ? ' · ' + p.workspaceDir : ''}</span>
+                  <span className="meta">
+                    {MODE_LABEL[p.mode]}
+                    {p.workspaceDir !== null ? ' · ' + p.workspaceDir : ''}
+                  </span>
                 </div>
                 <div className="row-actions">
                   {p.id !== state.activeProjectId && (
-                    <button disabled={busy} onClick={() => void onActivate(p.id)}>切换</button>
+                    <button disabled={busy} onClick={() => void onActivate(p.id)}>
+                      切换
+                    </button>
                   )}
-                  <button disabled={busy} onClick={() => void onDeleteProject(p.id)}>删除</button>
+                  <button disabled={busy} onClick={() => void onDeleteProject(p.id)}>
+                    删除
+                  </button>
                 </div>
               </div>
             </li>
@@ -222,9 +250,13 @@ export function Manage(): React.JSX.Element {
       <section className="card">
         <h2>会话历史</h2>
         <p className="actions">
-          <button disabled={busy} onClick={() => void onImportSession()}>导入会话…</button>
+          <button disabled={busy} onClick={() => void onImportSession()}>
+            导入会话…
+          </button>
         </p>
-        {state.sessions.length === 0 && <p>暂无会话记录。回到对话开始聊天后，会话会自动保存在本地。</p>}
+        {state.sessions.length === 0 && (
+          <p>暂无会话记录。回到对话开始聊天后，会话会自动保存在本地。</p>
+        )}
         <ul className="list">
           {state.sessions.map((s: SessionEntry) => (
             <li key={s.id}>
@@ -232,12 +264,17 @@ export function Manage(): React.JSX.Element {
                 <div>
                   <strong>{shortId(s.id)}</strong>
                   <span className="meta">
-                    {formatTime(s.mtimeMs)} · {formatBytes(s.sizeBytes)} · {s.fileCount} 个文件 · {s.workspaceKey}
+                    {formatTime(s.mtimeMs)} · {formatBytes(s.sizeBytes)} · {s.fileCount} 个文件 ·{' '}
+                    {s.workspaceKey}
                   </span>
                 </div>
                 <div className="row-actions">
-                  <button disabled={busy} onClick={() => void onExportSession(s)}>导出</button>
-                  <button disabled={busy} onClick={() => void onDeleteSession(s)}>删除</button>
+                  <button disabled={busy} onClick={() => void onExportSession(s)}>
+                    导出
+                  </button>
+                  <button disabled={busy} onClick={() => void onDeleteSession(s)}>
+                    删除
+                  </button>
                 </div>
               </div>
             </li>

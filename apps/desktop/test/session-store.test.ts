@@ -79,7 +79,9 @@ describe('SessionStore.delete', () => {
   it('rejects invalid ids and unknown ids', async () => {
     const store = new SessionStore(root)
     await expect(store.delete('../outside')).rejects.toThrow('invalid session id')
-    await expect(store.delete('session-99999999-9999-4999-8999-999999999999')).rejects.toThrow('not found')
+    await expect(store.delete('session-99999999-9999-4999-8999-999999999999')).rejects.toThrow(
+      'not found',
+    )
   })
 })
 

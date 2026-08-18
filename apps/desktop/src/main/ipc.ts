@@ -12,11 +12,7 @@ import type { ProjectStore } from './project-store.js'
 import type { SessionStore } from './session-store.js'
 import { workspaceKeyFromPath } from './session-store.js'
 import type { AppConfig, AppState, CreateProjectInput, OpResult, Project } from '../shared/types.js'
-import {
-  IPC,
-  type SaveProviderInput,
-  type TestProviderInput,
-} from '../shared/ipc.js'
+import { IPC, type SaveProviderInput, type TestProviderInput } from '../shared/ipc.js'
 
 export interface IpcDeps {
   providerStore: ProviderStoreFile
@@ -134,7 +130,10 @@ export function registerIpcHandlers(deps: IpcDeps): void {
 
   ipcMain.handle(IPC.sessionsImport, async (_event, srcDir: string): Promise<OpResult> => {
     try {
-      const path = await deps.sessionStore.importFrom(srcDir, workspaceKeyFromPath(deps.workspaceDir()))
+      const path = await deps.sessionStore.importFrom(
+        srcDir,
+        workspaceKeyFromPath(deps.workspaceDir()),
+      )
       return { ok: true, path }
     } catch (error) {
       return fail(error)

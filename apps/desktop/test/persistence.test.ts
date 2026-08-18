@@ -108,7 +108,9 @@ describe('DSH session persistence', () => {
       const run = await runHeadless()
       expect(run.status).toBe(0)
       if (run.status !== 0) {
-        throw new Error(`headless exited ${run.status ?? run.signal} stdout=${run.stdout} stderr=${run.stderr}`)
+        throw new Error(
+          `headless exited ${run.status ?? run.signal} stdout=${run.stdout} stderr=${run.stderr}`,
+        )
       }
 
       const records = sessionRecords()

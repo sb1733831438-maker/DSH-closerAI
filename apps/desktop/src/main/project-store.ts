@@ -29,7 +29,8 @@ function parseData(parsed: unknown): ProjectStoreData {
     ? (record.projects.filter(isProject) as Project[])
     : []
   const activeProjectId =
-    typeof record.activeProjectId === 'string' && projects.some((p) => p.id === record.activeProjectId)
+    typeof record.activeProjectId === 'string' &&
+    projects.some((p) => p.id === record.activeProjectId)
       ? record.activeProjectId
       : null
   return { activeProjectId, projects }
