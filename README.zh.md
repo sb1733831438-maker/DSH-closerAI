@@ -1,9 +1,8 @@
 ## 状态
 
-**v0.0.8 —— Windows 安装包已发布。** 最新 Windows 安装包
-（`CloserAI-0.0.8-Setup-x64.exe` + SHA-256）已附在 [v0.0.8
-Release](https://github.com/sb1733831438-maker/DSH-closerAI/releases)。项目正在向
-v0.1.0 可日常使用版本持续开发。当前里程碑见
+**v0.1.0 —— 可日常使用版本已发布。** Windows 安装包
+`CloserAI-0.1.0-Setup-x64.exe` + SHA-256 已附在 [v0.1.0
+Release](https://github.com/sb1733831438-maker/DSH-closerAI/releases)。当前里程碑见
 [`docs/STATUS.md`](docs/STATUS.md)，完整路线图见
 [`docs/EXECUTION_PLAN.md`](docs/EXECUTION_PLAN.md)。
 
@@ -19,3 +18,4 @@ v0.1.0 可日常使用版本持续开发。当前里程碑见
 | v0.0.6 | 扩展与 Web：搜索、MCP、技能、插件清单、Agent UI                   | 已发布 |
 | v0.0.7 | 原生桌面：托盘、通知、开机启动                                    | 已发布 |
 | v0.0.8 | 首个 Windows 安装包 + 打包运行时修复                              | 已发布 |
+| v0.1.0 | 可日常使用：RC 硬化 + Windows 安装包 + 校验和                     | 已发布 |
