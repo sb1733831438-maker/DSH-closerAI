@@ -13,6 +13,7 @@ jobs:
   windows-installer:
     name: windows-installer
     runs-on: ubuntu-latest
+    container: electronuserland/builder:wine
     steps:
       - uses: actions/checkout@v4
 
