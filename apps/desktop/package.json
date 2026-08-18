@@ -1,6 +1,6 @@
 {
   "name": "@closerai/desktop",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "private": true,
   "description": "CloserAI Electron desktop shell: hardened window that hosts the DeepSeek Harness web UI.",
   "license": "MIT",
@@ -12,11 +12,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "start": "electron .",
-    "smoke": "electron . --smoke-test"
+    "smoke": "electron . --smoke-test",
+    "pack": "electron-builder --config electron-builder.yml --win nsis",
+    "pack:dir": "electron-builder --config electron-builder.yml --dir"
   },
   "dependencies": {
     "@closerai/mock-provider": "workspace:*",
     "@closerai/supervisor": "workspace:*",
+    "@deepseek-ai/cordis-plugin-group": "1.0.1",
     "@deepseek-ai/dsh": "0.1.0-rc.6",
     "js-yaml": "4.2.0"
   },
@@ -27,6 +30,7 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.1",
     "electron": "43.4.0",
+    "electron-builder": "25.1.8",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "typescript": "5.9.3",

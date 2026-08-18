@@ -86,3 +86,13 @@ Nothing at the moment.
    CSP/eval hardening replacement (D-009 revisit).
 2. v0.0.9 → v0.1.0: release-candidate hardening, docs, and full acceptance.
 3. v0.0.9 → v0.1.0: release-candidate hardening, docs, and full acceptance.
+
+## Packaging status (v0.0.8 — RELEASED)
+
+- The Windows installer `CloserAI-0.0.8-Setup-x64.exe` + `SHA256SUMS.txt` are built by
+  a Windows CI runner (electron-builder native; no wine) via the release-build workflow.
+- Packaged runtime fix: an afterPack hook overlays a flat npm install of the DSH runtime
+  (no symlinks, Windows natives, includes the peer/optional plugins the collector drops)
+  onto the collected app node_modules.
+- Verified end-to-end: fresh install to a clean directory, packaged-app smoke passes
+  (onboarding → DSH UI → management page, exit 0); SHA-256 matches.

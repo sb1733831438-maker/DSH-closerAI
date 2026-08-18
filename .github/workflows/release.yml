@@ -12,8 +12,7 @@ permissions:
 jobs:
   windows-installer:
     name: windows-installer
-    runs-on: ubuntu-latest
-    container: electronuserland/builder:wine
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -32,50 +31,47 @@ jobs:
       - name: Build workspace deps + desktop
         run: pnpm -r build
 
-      # Linux preserves pnpm's symlinked layout, so electron-builder's
-      # collector keeps the DSH runtime's full dependency tree.
+      # npm flat install of the DSH runtime on a Windows runner gives correct
+      # native modules (koffi/node-pty) and no symlinks (Windows-safe).
       - name: Prepare flat runtime node_modules (npm)
+        shell: pwsh
         run: |
-          mkdir -p runtime-flat
-          cd runtime-flat
-          npm init -y
-          npm install --no-audit --no-fund @deepseek-ai/dsh@0.1.0-rc.6 @closerai/mock-provider@file:../packages/mock-provider @closerai/supervisor@file:../packages/supervisor
+          New-Item -ItemType Directory -Force -Path runtime-flat | Out-Null
+          Push-Location runtime-flat
+          npm init -y | Out-Null
+          npm install --no-audit --no-fund @deepseek-ai/dsh@0.1.0-rc.6
+          Pop-Location
 
       - name: Package Windows installer
         env:
-          # builder:wine runs as root; wine refuses HOME it does not own
-          HOME: /root
-          WINEPREFIX: /root/.wine
-          CLOSERAI_RUNTIME_NODE_MODULES: /__w/DSH-closerAI/DSH-closerAI/runtime-flat/node_modules
+          CLOSERAI_RUNTIME_NODE_MODULES: ${{ github.workspace }}\runtime-flat\node_modules
         run: pnpm --filter @closerai/desktop run pack
 
       - name: Verify packaged DSH runtime is complete
+        shell: pwsh
         run: |
-          test -d apps/desktop/release/win-unpacked/resources/app/node_modules/@deepseek-ai/cordis-plugin-group && echo 'cordis-plugin-group present' || (echo 'cordis MISSING'; exit 1)
-          test -f apps/desktop/release/win-unpacked/resources/app/node_modules/@deepseek-ai/dsh/lib/bin.js && echo 'dsh bin present'
-          ls apps/desktop/release/win-unpacked/resources/app/node_modules/@deepseek-ai/ | wc -l
+          $app = "apps\desktop\release\win-unpacked\resources\app\node_modules"
+          if (Test-Path "$app\@deepseek-ai\cordis-plugin-group") { Write-Host "cordis-plugin-group present" } else { Write-Error "cordis MISSING"; exit 1 }
+          if (Test-Path "$app\@deepseek-ai\dsh\lib\bin.js") { Write-Host "dsh bin present" }
+          if (Test-Path "$app\@closerai\mock-provider") { Write-Host "@closerai/mock-provider present" } else { Write-Error "@closerai MISSING"; exit 1 }
 
       - name: Compute SHA-256
-        working-directory: apps/desktop/release
+        shell: pwsh
         run: |
-          sha256sum CloserAI-*-Setup-x64.exe > SHA256SUMS.txt
-          cat SHA256SUMS.txt
+          Get-FileHash -Algorithm SHA256 "apps\desktop\release\CloserAI-0.0.8-Setup-x64.exe" | ForEach-Object { "$($_.Hash.ToLower())  CloserAI-0.0.8-Setup-x64.exe" } | Set-Content apps\desktop\release\SHA256SUMS.txt
+          Get-Content apps\desktop\release\SHA256SUMS.txt
 
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installer
           path: |
-            apps/desktop/release/CloserAI-*-Setup-x64.exe
+            apps/desktop/release/CloserAI-0.0.8-Setup-x64.exe
             apps/desktop/release/SHA256SUMS.txt
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: win-unpacked
-          path: apps/desktop/release/win-unpacked/**
 
       - name: Attach to GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${GITHUB_REF_NAME}" apps/desktop/release/CloserAI-*-Setup-x64.exe apps/desktop/release/SHA256SUMS.txt --clobber
+          gh release upload "$env:GITHUB_REF_NAME" "apps/desktop/release/CloserAI-0.0.8-Setup-x64.exe" "apps/desktop/release/SHA256SUMS.txt" --clobber
+        shell: pwsh
