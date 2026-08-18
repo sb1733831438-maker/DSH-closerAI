@@ -80,7 +80,7 @@ describe('ProjectStore', () => {
 
   it('setActive switches and validates', () => {
     const store = new ProjectStore(file)
-    const a = store.create({ name: 'A', mode: 'chat' })
+    store.create({ name: 'A', mode: 'chat' })
     const b = store.create({ name: 'B', mode: 'work' })
     store.setActive(b.id)
     expect(store.getActive()?.id).toBe(b.id)

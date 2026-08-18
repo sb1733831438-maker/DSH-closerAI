@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { dialog, ipcMain } from 'electron'
 import {
   DEEPSEEK_DEFAULT,
   MOCK_DEFAULT,
@@ -8,16 +8,63 @@ import {
 import type { ProviderStoreFile } from './provider-store.js'
 import type { SecretStore } from './secrets.js'
 import type { AppConfigStore } from './mode-store.js'
-import type { AppConfig } from '../shared/types.js'
-import { IPC, type SaveProviderInput, type TestProviderInput } from '../shared/ipc.js'
+import type { ProjectStore } from './project-store.js'
+import type { SessionStore } from './session-store.js'
+import { workspaceKeyFromPath } from './session-store.js'
+import type { AppConfig, AppState, CreateProjectInput, OpResult, Project } from '../shared/types.js'
+import {
+  IPC,
+  type SaveProviderInput,
+  type TestProviderInput,
+} from '../shared/ipc.js'
 
 export interface IpcDeps {
   providerStore: ProviderStoreFile
   secretStore: SecretStore
   configStore: AppConfigStore
-  /** Called when onboarding completes or the mode changes; restarts DSH. */
+  projectStore: ProjectStore
+  sessionStore: SessionStore
+  /** The current workspace root for the active mode/project. */
+  workspaceDir: () => string
+  /** Called when onboarding completes, the mode changes, or a project is
+   *  activated; restarts DSH against the new profile/workspace. */
   onComplete: () => void
+  /** Current DSH backend URL, or null when no backend is running. */
+  backendUrl: () => string | null
+  /** Navigate the shell back to the DSH chat UI. */
+  showChat: () => void
+  /** Navigate the shell to the CloserAI management page. */
+  showManage: () => void
 }
+
+function ok(): OpResult {
+  return { ok: true }
+}
+
+function fail(error: unknown): OpResult {
+  return {
+    ok: false,
+    error: error instanceof Error ? error.message : String(error),
+  }
+}
+
+/** Materialize an activated project into the existing AppConfig so the DSH
+ *  backend (preset + workspace) is driven by the project's mode/directory. */
+function applyProjectToConfig(configStore: AppConfigStore, projectStore: ProjectStore): void {
+  const active = projectStore.getActive()
+  if (active === null) return
+  const current = configStore.read()
+  const next: AppConfig = {
+    mode: active.mode,
+    workspaceDir:
+      active.mode === 'code' && active.workspaceDir !== null
+        ? active.workspaceDir
+        : current.workspaceDir,
+  }
+  configStore.write(next)
+}
+
+export { applyProjectToConfig }
 
 export function registerIpcHandlers(deps: IpcDeps): void {
   ipcMain.handle(IPC.providersList, () => deps.providerStore.read().providers)
@@ -58,5 +105,119 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     deps.configStore.write(config)
     deps.onComplete()
     return { ok: true }
+  })
+
+  // --- session history -------------------------------------------------
+
+  ipcMain.handle(IPC.sessionsList, () => deps.sessionStore.list())
+
+  ipcMain.handle(IPC.sessionsDelete, async (_event, id: string): Promise<OpResult> => {
+    try {
+      await deps.sessionStore.delete(id)
+      return ok()
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(
+    IPC.sessionsExport,
+    async (_event, id: string, destDir: string): Promise<OpResult> => {
+      try {
+        const path = await deps.sessionStore.exportTo(id, destDir)
+        return { ok: true, path }
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  ipcMain.handle(IPC.sessionsImport, async (_event, srcDir: string): Promise<OpResult> => {
+    try {
+      const path = await deps.sessionStore.importFrom(srcDir, workspaceKeyFromPath(deps.workspaceDir()))
+      return { ok: true, path }
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  // --- projects --------------------------------------------------------
+
+  ipcMain.handle(IPC.projectsList, () => deps.projectStore.read())
+
+  ipcMain.handle(
+    IPC.projectsCreate,
+    (_event, input: CreateProjectInput): OpResult & { project?: unknown } => {
+      try {
+        const project = deps.projectStore.create(input)
+        applyProjectToConfig(deps.configStore, deps.projectStore)
+        deps.onComplete()
+        return { ok: true, project }
+      } catch (error) {
+        return fail(error)
+      }
+    },
+  )
+
+  ipcMain.handle(IPC.projectsUpdate, (_event, project: Project): OpResult => {
+    try {
+      deps.projectStore.update(project)
+      applyProjectToConfig(deps.configStore, deps.projectStore)
+      deps.onComplete()
+      return ok()
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.projectsDelete, (_event, id: string): OpResult => {
+    try {
+      deps.projectStore.remove(id)
+      applyProjectToConfig(deps.configStore, deps.projectStore)
+      deps.onComplete()
+      return ok()
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.projectsActivate, (_event, id: string | null): OpResult => {
+    try {
+      deps.projectStore.setActive(id)
+      applyProjectToConfig(deps.configStore, deps.projectStore)
+      deps.onComplete()
+      return ok()
+    } catch (error) {
+      return fail(error)
+    }
+  })
+
+  ipcMain.handle(IPC.appState, async (): Promise<AppState> => {
+    const projects = deps.projectStore.read()
+    const sessions = await deps.sessionStore.list()
+    return {
+      mode: deps.configStore.read().mode,
+      activeProjectId: projects.activeProjectId,
+      projects: projects.projects,
+      sessions,
+      backendUrl: deps.backendUrl(),
+    }
+  })
+  ipcMain.handle(IPC.navChat, () => {
+    deps.showChat()
+    return { ok: true }
+  })
+
+  ipcMain.handle(IPC.navManage, () => {
+    deps.showManage()
+    return { ok: true }
+  })
+
+  ipcMain.handle(IPC.dialogPickDirectory, async (): Promise<string | null> => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory', 'createDirectory'],
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    return result.filePaths[0] ?? null
   })
 }

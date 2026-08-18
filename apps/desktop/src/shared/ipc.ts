@@ -30,6 +30,9 @@ export const IPC = {
   projectsDelete: 'projects:delete',
   projectsActivate: 'projects:activate',
   appState: 'app:state',
+  navChat: 'nav:chat',
+  navManage: 'nav:manage',
+  dialogPickDirectory: 'dialog:pick-directory',
 } as const
 
 export interface SaveProviderInput {
@@ -64,4 +67,7 @@ export interface CloserAiBridge {
   updateProject(project: Project): Promise<OpResult>
   deleteProject(id: string): Promise<OpResult>
   activateProject(id: string | null): Promise<OpResult>
+  openChat(): Promise<{ ok: boolean }>
+  openManage(): Promise<{ ok: boolean }>
+  pickDirectory(): Promise<string | null>
 }
