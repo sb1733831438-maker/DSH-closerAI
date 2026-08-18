@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   buildContentSecurityPolicy,
@@ -122,5 +123,20 @@ describe('hardenedWebPreferences (RC hardening)', () => {
       allowRunningInsecureContent: false,
       preload: '/x.cjs',
     })
+  })
+})
+describe('renderer index.html CSP contract (RC hardening)', () => {
+  it('locks down the app-owned pages without unsafe-eval', () => {
+    const html = readFileSync(new URL('../src/renderer/index.html', import.meta.url), 'utf8')
+    const meta = html.match(/Content-Security-Policy[^>]*content="([^"]*)"/)
+    expect(meta).not.toBeNull()
+    const csp = meta![1]!
+    // app-owned pages never need eval or inline script
+    expect(csp).not.toContain("'unsafe-eval'")
+    expect(csp).not.toContain("script-src 'self' 'unsafe-inline'")
+    expect(csp).toContain("object-src 'none'")
+    expect(csp).toContain("base-uri 'none'")
+    expect(csp).toContain("form-action 'none'")
+    expect(csp).toContain("frame-ancestors 'none'")
   })
 })
