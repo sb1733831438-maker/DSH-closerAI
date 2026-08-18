@@ -5,8 +5,8 @@
 // (symlinks available) we dereference so the result is self-contained.
 // Source passed via env CLOSERAI_RUNTIME_NODE_MODULES.
 import { execFileSync } from 'node:child_process'
+import { dirname, join } from 'node:path'
 import { mkdirSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
 
 export async function afterPack(context) {
   const source = process.env.CLOSERAI_RUNTIME_NODE_MODULES
@@ -15,7 +15,11 @@ export async function afterPack(context) {
   }
   const target = join(context.appOutDir, 'resources', 'app', 'node_modules')
   rmSync(target, { recursive: true, force: true })
-  mkdirSync(join(context.appOutDir, 'resources', 'app'), { recursive: true })
-  // cp -rL source target: dereference symlinks, avoid 'into itself'
-  execFileSync('cp', ['-rL', source, target], { stdio: 'inherit' })
+  mkdirSync(dirname(target), { recursive: true })
+  // tar -h dereferences symlinks; avoids cp 'copy directory into itself'
+  const srcParent = dirname(source)
+  const tgtParent = dirname(target)
+  execFileSync('bash', ['-c',
+    "cd '" + srcParent + "' && tar -h -cf - node_modules | (cd '" + tgtParent + "' && tar -xf -)",
+  ], { stdio: 'inherit' })
 }
