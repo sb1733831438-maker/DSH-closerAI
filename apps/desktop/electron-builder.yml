@@ -27,5 +27,6 @@ nsis:
   shortcutName: CloserAI
   artifactName: CloserAI-${version}-Setup-${arch}.${ext}
 npmRebuild: false
+afterPack: scripts/copy-runtime-node-modules.js
 electronDownload:
   cache: null
