@@ -5,6 +5,24 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.6] - 2026-08-18
+
+### Added
+
+- Capability toggles for the Chat / Work / Code presets (management page): web search,
+  web fetch, and skills; presets are re-rendered at install time, so no DSH core changes.
+- Diagnostics view + export (management page): DSH supervisor state, session/project
+  summary, and the most recent child logs; every log line is redacted in the main process
+  (sk- keys, bearer tokens, key=value secrets) before it reaches the renderer or a file.
+- Per-mode permission manifest (management page): the designed Chat / Work / Code
+  capability surface, so users can see what each mode may do.
+
+### Known scope
+
+- MCP server management is deferred: DSH's MCP config schema is not discoverable from the
+  bundled runtime, so shipping a guessed config would be broken. Subagent / plan / task
+  status is rendered natively by the DSH UI.
+
 ## [0.0.5] - 2026-08-18
 
 ### Added

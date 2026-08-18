@@ -87,5 +87,53 @@ export interface AppState {
   activeProjectId: string | null
   projects: Project[]
   sessions: SessionEntry[]
+  capabilities: Capabilities
+  permissions: ModePermissions[]
   backendUrl: string | null
+}
+
+/** Per-mode capability toggles applied when installing the agent presets. */
+export interface Capabilities {
+  /** Whether the web search tool is mounted in Chat/Work/Code presets. */
+  webSearch: boolean
+  /** Whether the web tool may fetch page contents (fetch) in addition to search. */
+  webFetch: boolean
+  /** Whether the skills tool is mounted (Code preset). */
+  skills: boolean
+}
+
+/** One captured child log line, redacted before it leaves the main process. */
+export interface DiagnosticLogLine {
+  stream: 'stdout' | 'stderr'
+  text: string
+  at: number
+}
+
+/** Diagnostics snapshot shown in the management page / export bundle. */
+export interface Diagnostics {
+  appVersion: string
+  platform: string
+  mode: Mode
+  activeProjectName: string | null
+  capabilities: Capabilities
+  sessionCount: number
+  backendUrl: string | null
+  supervisorState: string
+  supervisorPid: number | null
+  logLines: DiagnosticLogLine[]
+  generatedAt: number
+}
+
+/** One granted capability inside a mode's permission manifest. */
+export interface PermissionEntry {
+  /** Display name of the tool / capability. */
+  tool: string
+  /** What the tool may do. */
+  permission: string
+}
+
+/** The designed permission surface for one mode (drives the manifest UI). */
+export interface ModePermissions {
+  mode: Mode
+  entries: PermissionEntry[]
 }

@@ -13,7 +13,7 @@ OS-keychain secrets, and a plugin safety model — while delegating the agent ru
 
 ## Status
 
-**Pre-release — v0.0.5.** The project is under active construction toward a v0.1.0 daily-use
+**Pre-release — v0.0.6.** The project is under active construction toward a v0.1.0 daily-use
 release. See [`docs/STATUS.md`](docs/STATUS.md) for the current milestone and
 [`docs/EXECUTION_PLAN.md`](docs/EXECUTION_PLAN.md) for the full roadmap.
 

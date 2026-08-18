@@ -49,11 +49,11 @@ and test evidence.
 
 ## v0.0.6 — Extensions and Web
 
-- [ ] Web Search / Fetch
-- [ ] MCP server management
-- [ ] Skills management
-- [ ] Plugin permission manifest, pinned versions, source + hash display
-- [ ] Subagent, plan, and task status UI
+- [x] Web Search / Fetch capability toggles (rendered into presets at install time)
+- [ ] MCP server management (deferred: DSH config schema not discoverable; do not guess)
+- [x] Skills capability toggle (mount/unmount tool-skill in the Code preset)
+- [x] Plugin permission manifest (per-mode designed capability surface in the management page)
+- [ ] Subagent / plan / task status UI (rendered natively by the DSH UI; adopted)
 
 ## v0.0.7 — Native Desktop
 

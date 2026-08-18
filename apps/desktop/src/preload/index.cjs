@@ -25,12 +25,16 @@ const IPC = {
   navChat: 'nav:chat',
   navManage: 'nav:manage',
   dialogPickDirectory: 'dialog:pick-directory',
+  capsGet: 'caps:get',
+  capsSet: 'caps:set',
+  appDiagnostics: 'app:diagnostics',
+  appExportDiagnostics: 'app:export-diagnostics',
 }
 
 /** @type {import('../shared/ipc').CloserAiBridge} */
 const api = Object.freeze({
   platform: process.platform,
-  appVersion: '0.0.5',
+  appVersion: '0.0.6',
   listProviders: () => ipcRenderer.invoke(IPC.providersList),
   getActiveProvider: () => ipcRenderer.invoke(IPC.providersActive),
   getDefaults: () => ipcRenderer.invoke(IPC.providersDefaults),

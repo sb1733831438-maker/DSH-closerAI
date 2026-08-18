@@ -166,3 +166,30 @@ else stays locked to the DSH origin or is denied.
 rule and crashed the renderer mid-navigation. Exempting one trusted app file keeps the lock
 strict for everything else and fixes the manage page. **Revisit** in v0.0.8 when the CSP
 script hashes land.
+
+## D-017 — Diagnostics logs are redacted in the main process
+
+**Decision:** Diagnostic log lines are passed through a sanitizer in the main process
+(sk- keys, bearer tokens, key=value secrets, env echoes) before they reach the renderer or
+an export file.
+
+**Why:** Guarantees secrets never leave the main process even if a DSH child once echoed
+one; the requirement is absolute.
+
+## D-018 — Capability toggles render presets as a block-scoped text transform
+
+**Decision:** Capability toggles (web search/fetch/skills) are applied to the app-owned
+preset YAML with a line-based, block-scoped transform keyed on top-level `- id:` entries,
+not a YAML AST edit.
+
+**Why:** The checked-in presets use YAML tags such as `!!js` that plain js-yaml cannot
+parse; a precise text transform on files the app owns is safe and testable.
+
+## D-019 — Permission manifest mirrors the designed presets
+
+**Decision:** The management page shows a static per-mode permission manifest that mirrors
+the checked-in presets; the actual enabled tools additionally depend on the capability
+toggles.
+
+**Why:** DSH's bundled runtime exposes no stable API to query its live tool roster, so a
+designed-surface manifest is honest and sufficient for transparency.

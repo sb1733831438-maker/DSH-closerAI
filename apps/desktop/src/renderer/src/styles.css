@@ -221,3 +221,40 @@ select {
   font-size: 12px;
   line-height: 1.6;
 }
+
+.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.check input {
+  width: auto;
+}
+
+.hint {
+  color: #9aa3ad;
+  font-size: 12px;
+  margin: 0 0 12px;
+}
+
+.diag p.meta {
+  margin: 0 0 10px;
+  color: #c6ccd4;
+}
+
+.logview {
+  margin-top: 10px;
+  max-height: 240px;
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid #232936;
+  border-radius: 8px;
+  background: #0d0f13;
+  color: #9fe8a4;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

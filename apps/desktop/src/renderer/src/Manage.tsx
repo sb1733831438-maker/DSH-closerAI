@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react'
-import type { AppState, Mode, OpResult, Project, SessionEntry } from '../../shared/types'
+import type {
+  AppState,
+  Capabilities,
+  Diagnostics,
+  Mode,
+  OpResult,
+  Project,
+  SessionEntry,
+} from '../../shared/types'
 
 const MODE_LABEL: Record<Mode, string> = {
   chat: '对话',
@@ -30,12 +38,17 @@ export function Manage(): React.JSX.Element {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [caps, setCaps] = useState<Capabilities | null>(null)
+  const [diag, setDiag] = useState<Diagnostics | null>(null)
+  const [showLogs, setShowLogs] = useState(false)
   const [name, setName] = useState('')
   const [mode, setMode] = useState<Mode>('chat')
   const [workspaceDir, setWorkspaceDir] = useState('')
 
   const refresh = async (): Promise<void> => {
-    setState(await window.closerai.getAppState())
+    const next = await window.closerai.getAppState()
+    setState(next)
+    setCaps((previous) => previous ?? { ...next.capabilities })
   }
 
   useEffect(() => {
@@ -140,13 +153,50 @@ export function Manage(): React.JSX.Element {
     }
   }
 
+  const refreshDiagnostics = async (): Promise<void> => {
+    setBusy(true)
+    try {
+      setDiag(await window.closerai.getDiagnostics())
+      setError('')
+    } catch (e) {
+      setError(errText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const onExportDiagnostics = async (): Promise<void> => {
+    setBusy(true)
+    try {
+      const dest = await window.closerai.pickDirectory()
+      if (dest === null) return
+      const result = await window.closerai.exportDiagnostics(dest)
+      if (result.ok) setNotice('诊断已导出到 ' + result.path)
+      else setError(result.error ?? '导出失败')
+    } catch (e) {
+      setError(errText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const onSaveCapabilities = async (): Promise<void> => {
+    if (caps === null) return
+    setBusy(true)
+    try {
+      flash(await window.closerai.setCapabilities(caps))
+      await refresh()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (state === null)
     return (
       <main className="shell">
         <p>加载中…</p>
       </main>
     )
-
   const activeProject = state.projects.find((p: Project) => p.id === state.activeProjectId) ?? null
 
   return (
@@ -169,6 +219,25 @@ export function Manage(): React.JSX.Element {
             ? '项目「' + activeProject.name + '」· ' + MODE_LABEL[activeProject.mode]
             : '未绑定项目 · ' + MODE_LABEL[state.mode] + ' 模式'}
         </p>
+      </section>
+
+      <section className="card">
+        <h2>权限清单</h2>
+        <p className="hint">
+          当前模式「${MODE_LABEL[state.mode]}」设计授予的能力；实际启用的工具还受「能力设置」影响。
+        </p>
+        <ul className="list">
+          {state.permissions
+            .find((item) => item.mode === state.mode)
+            ?.entries.map((entry) => (
+              <li key={entry.tool}>
+                <div className="row">
+                  <strong>{entry.tool}</strong>
+                  <span className="meta">{entry.permission}</span>
+                </div>
+              </li>
+            ))}
+        </ul>
       </section>
 
       <section className="card">
@@ -245,6 +314,74 @@ export function Manage(): React.JSX.Element {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="card">
+        <h2>能力设置</h2>
+        <p className="hint">保存后会重新生成 Agent Preset 并重启对话后端。</p>
+        {caps !== null && (
+          <>
+            <div className="grid">
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={caps.webSearch}
+                  onChange={(e) => setCaps({ ...caps, webSearch: e.target.checked })}
+                />
+                联网搜索（Chat / Work / Code）
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={caps.webFetch}
+                  onChange={(e) => setCaps({ ...caps, webFetch: e.target.checked })}
+                />
+                网页抓取 fetch（依赖联网搜索开启）
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={caps.skills}
+                  onChange={(e) => setCaps({ ...caps, skills: e.target.checked })}
+                />
+                技能 Skills（Code 模式）
+              </label>
+            </div>
+            <button className="primary" disabled={busy} onClick={() => void onSaveCapabilities()}>
+              保存能力设置
+            </button>
+          </>
+        )}
+      </section>
+
+      <section className="card">
+        <h2>诊断</h2>
+        <p className="hint">查看 DSH 子进程状态与最近日志（已自动脱敏），或导出完整诊断报告。</p>
+        <div className="row-actions" style={{ marginBottom: 12 }}>
+          <button disabled={busy} onClick={() => void refreshDiagnostics()}>
+            刷新
+          </button>
+          <button disabled={busy} onClick={() => void onExportDiagnostics()}>
+            导出诊断…
+          </button>
+        </div>
+        {diag !== null && (
+          <div className="diag">
+            <p className="meta">
+              CloserAI {diag.appVersion} · {diag.platform} · 模式 {diag.mode} · 项目{' '}
+              {diag.activeProjectName ?? '（无）'} · 会话 {diag.sessionCount} 个 · DSH{' '}
+              {diag.supervisorState} (pid {diag.supervisorPid ?? 'n/a'})
+            </p>
+            <button onClick={() => setShowLogs((v) => !v)}>
+              {showLogs ? '收起日志' : '显示最近日志 (' + diag.logLines.length + ' 行)'}
+            </button>
+            {showLogs && (
+              <pre className="logview">
+                {diag.logLines.length === 0 ? '（暂无日志）' : diag.logLines.slice(-20).join('\n')}
+              </pre>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="card">

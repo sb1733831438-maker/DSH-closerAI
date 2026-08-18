@@ -12,7 +12,7 @@ DSH 作为 Agent 运行时的同时，新增了桌面监督器（Supervisor）�
 
 ## 状态
 
-**预发布 —— v0.0.5。** 项目正在向 v0.1.0 可日常使用版本持续开发。当前里程碑见
+**预发布 —— v0.0.6。** 项目正在向 v0.1.0 可日常使用版本持续开发。当前里程碑见
 [`docs/STATUS.md`](docs/STATUS.md)，完整路线图见
 [`docs/EXECUTION_PLAN.md`](docs/EXECUTION_PLAN.md)。
 

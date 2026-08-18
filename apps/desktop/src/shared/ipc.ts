@@ -1,7 +1,9 @@
 import type {
   AppConfig,
   AppState,
+  Capabilities,
   ConnectivityResult,
+  Diagnostics,
   CreateProjectInput,
   OpResult,
   Project,
@@ -33,6 +35,10 @@ export const IPC = {
   navChat: 'nav:chat',
   navManage: 'nav:manage',
   dialogPickDirectory: 'dialog:pick-directory',
+  capsGet: 'caps:get',
+  capsSet: 'caps:set',
+  appDiagnostics: 'app:diagnostics',
+  appExportDiagnostics: 'app:export-diagnostics',
 } as const
 
 export interface SaveProviderInput {
@@ -70,4 +76,8 @@ export interface CloserAiBridge {
   openChat(): Promise<{ ok: boolean }>
   openManage(): Promise<{ ok: boolean }>
   pickDirectory(): Promise<string | null>
+  getCapabilities(): Promise<Capabilities>
+  setCapabilities(caps: Capabilities): Promise<OpResult>
+  getDiagnostics(): Promise<Diagnostics>
+  exportDiagnostics(destDir: string): Promise<OpResult>
 }

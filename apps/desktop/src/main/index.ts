@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { app, Menu, type BrowserWindow, type MenuItemConstructorOptions } from 'electron'
 import { launchBackend, type RunningBackend } from './backend.js'
 import { DEEP_LINK_SCHEME, parseDeepLink } from './deep-link.js'
+import { CapabilitiesStore } from './capabilities.js'
 import { applyProjectToConfig, registerIpcHandlers } from './ipc.js'
 import { AppConfigStore } from './mode-store.js'
 import { MOCK_DEFAULT } from './providers.js'
@@ -26,6 +27,7 @@ function main(): void {
   const providerStore = new ProviderStoreFile(join(userData, 'providers.json'))
   const configStore = new AppConfigStore(join(userData, 'app-config.json'))
   const projectStore = new ProjectStore(join(userData, 'projects.json'))
+  const capabilitiesStore = new CapabilitiesStore(join(userData, 'capabilities.json'))
   const dshHome = join(userData, 'dsh-home')
   const sessionStore = new SessionStore(join(dshHome, 'sessions'))
   let secretStore: SecretStore | null = null
@@ -105,6 +107,7 @@ function main(): void {
       apiKey,
       mode,
       workspaceDir: workspaceDirFor(),
+      capabilities: capabilitiesStore.read(),
     })
     backend = running
 
@@ -228,10 +231,16 @@ function main(): void {
       configStore,
       projectStore,
       sessionStore,
+      capabilitiesStore,
       workspaceDir: workspaceDirFor,
       backendUrl: () => (backend === null ? null : backend.dsh.url),
       showChat,
       showManage: showManagePage,
+      diagnosticsLogs: () => (backend === null ? [] : backend.dsh.supervisor.logs.entries()),
+      supervisorStatus: () =>
+        backend === null
+          ? { state: 'idle', pid: null }
+          : { state: backend.dsh.supervisor.getState(), pid: backend.dsh.supervisor.getPid() },
       onComplete: () => {
         void startBackendForActiveProfile()
       },
