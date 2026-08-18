@@ -1,12 +1,12 @@
-// electron-builder afterPack hook: replace the collected (partial)
-// node_modules with the complete runtime tree produced by an npm flat
-// install (@deepseek-ai/dsh + @closerai/* file links). npm's flat layout has
-// no symlinks (Windows-safe) and includes DSH's peer/optional plugins that
-// electron-builder's collector drops; a plain cp -r is therefore fast.
+// electron-builder afterPack hook: overlay a complete runtime node_modules
+// (an npm flat install of @deepseek-ai/dsh, which has no symlinks and
+// includes DSH's peer/optional plugins that electron-builder's collector
+// drops) on top of the collected app node_modules. fs.cp force-merge keeps
+// the main-process packages (@closerai/*, js-yaml) while overwriting the
+// DSH tree with the complete one.
 // Source passed via env CLOSERAI_RUNTIME_NODE_MODULES.
-import { execFileSync } from 'node:child_process'
-import { dirname, join } from 'node:path'
-import { mkdirSync, rmSync } from 'node:fs'
+import { cp } from 'node:fs/promises'
+import { join } from 'node:path'
 
 export async function afterPack(context) {
   const source = process.env.CLOSERAI_RUNTIME_NODE_MODULES
@@ -14,7 +14,6 @@ export async function afterPack(context) {
     throw new Error('CLOSERAI_RUNTIME_NODE_MODULES must point at the runtime node_modules')
   }
   const target = join(context.appOutDir, 'resources', 'app', 'node_modules')
-  rmSync(target, { recursive: true, force: true })
-  mkdirSync(dirname(target), { recursive: true })
-  execFileSync('cp', ['-r', source, target], { stdio: 'inherit' })
+  // merge/overwrite into the existing tree (keeps @closerai, js-yaml, ...)
+  await cp(source, target, { recursive: true, force: true })
 }
