@@ -89,9 +89,17 @@ Nothing at the moment.
 
 ## Packaging status (v0.0.8, WIP)
 
-- electron-builder scaffolding works: a Windows NSIS installer builds, and the packaged DSH
-  runtime is resolvable (verified: DSH web boots from packaged resources).
-- Open blocker: pnpm's isolated node_modules layout is not fully packed by electron-builder
-  (transitive deps like @deepseek-ai/cordis-plugin-group that live only in the virtual store),
-  and a packaged GUI boot hang needs one more debug round. Solving this requires a dedicated
-  flat production node_modules for the build (not a workspace layout change).
+- Linux CI cross-build of the Windows installer WORKS: the release-build
+  workflow (electron-builder wine container) produces CloserAI-*-Setup-x64.exe
+  + SHA256SUMS.txt on every dispatch; wine HOME/WINEPREFIX fixes applied.
+- Root cause of the packaged-runtime blocker is now precise: electron-builder's
+  node collector packs only the dependencies reachable from package.json and
+  DROPS DSH's ~180 peer/optional plugins (cordis-plugin-group, dsh-timeout,
+  dsh-fs, dsh-shell, dsh-llm, dsh-tool-*, dsh-client-*, ...). Even a Linux
+  cross-build (where pnpm symlinks work) still misses them.
+- Fix: afterPack hook replaces the packaged node_modules with the complete
+  pnpm-deploy tree. The mechanism runs, but materializing 683MB of symlinks
+  (~3.3GB of real files) inside the container is too slow (25+ min) — the
+  remaining work is a fast, Windows-safe way to ship the full tree
+  (e.g. materialize once into a tar.gz in CI, or an npm-flat production
+  install). Dev app, installer build, and the verify step are all in place.
