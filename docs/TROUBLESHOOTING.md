@@ -29,6 +29,15 @@ them to a GitHub issue.
 - **Fix:** connect to the network and restart. Offline mode is not supported for
   cloud models; the mock provider works fully offline.
 
+## The desktop shows no conversations / plugins, unlike my web DSH
+
+- **Cause:** before v0.2.0 the desktop used an isolated DSH home; and if a DSH
+  is already running on the same home (web DSH, or another instance), a second
+  DSH cannot boot (single-owner plugins like task-board's ledger lock).
+- **Fix:** update to v0.2.0+; close the web DSH (or any other DSH) before
+  starting the desktop so it can take the `~/.dsh` home. The desktop then
+  shares sessions, profiles and plugins with your web DSH.
+
 ## My session list is empty after an upgrade
 
 - **Cause:** sessions live under `%APPDATA%/@closerai/dsh-home/sessions`. A
