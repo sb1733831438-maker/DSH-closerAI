@@ -10,6 +10,10 @@
 ![License](https://img.shields.io/github/license/sb1733831438-maker/DSH-closerAI)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
+<p align="center">
+  <img src="docs/screenshot.png" alt="CloserAI" width="820"/>
+</p>
+
 CloserAI is an open-source desktop client that hosts a [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
 process inside a hardened Electron shell. It is **not a thin wrapper**: it keeps DSH as the agent runtime
 and adds a desktop supervisor, three permission-isolated working modes, local-first session storage,

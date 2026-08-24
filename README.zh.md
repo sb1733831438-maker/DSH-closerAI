@@ -10,6 +10,10 @@
 ![License](https://img.shields.io/github/license/sb1733831438-maker/DSH-closerAI)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 
+<p align="center">
+  <img src="docs/screenshot.png" alt="CloserAI" width="820"/>
+</p>
+
 CloserAI 是一款开源桌面应用，在加固的 Electron 外壳中托管一个
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 进程。它不是简单套壳：在保留
 DSH 作为 Agent 运行时的同时，新增了桌面监督器（Supervisor）、三种权限隔离工作模式
