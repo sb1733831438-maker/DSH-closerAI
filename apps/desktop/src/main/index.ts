@@ -1,3 +1,4 @@
+import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { app, Menu, type BrowserWindow, type MenuItemConstructorOptions } from 'electron'
@@ -12,6 +13,7 @@ import { ProjectStore } from './project-store.js'
 import { createSafeStorageCipher } from './safe-storage-cipher.js'
 import { SecretStore } from './secrets.js'
 import { SessionStore } from './session-store.js'
+import { resolveDshHome } from './dsh-home.js'
 import {
   applyLaunchAtLogin,
   createTray,
@@ -39,9 +41,13 @@ function main(): void {
   const configStore = new AppConfigStore(join(userData, 'app-config.json'))
   const projectStore = new ProjectStore(join(userData, 'projects.json'))
   const capabilitiesStore = new CapabilitiesStore(join(userData, 'capabilities.json'))
-  const dshHome = join(userData, 'dsh-home')
-  const sessionStore = new SessionStore(join(dshHome, 'sessions'))
+  const resolvedHome = isSmokeTest
+    ? { home: join(app.getPath('temp'), 'closerai-smoke-' + process.pid), mode: 'managed' as const }
+    : resolveDshHome(userData)
+  const dshHome = resolvedHome.home
+  const dshMode = resolvedHome.mode
   let secretStore: SecretStore | null = null
+  const sessionStore = new SessionStore(join(dshHome, 'sessions'))
 
   const getSecretStore = (): SecretStore => {
     // safeStorage requires the app to be ready; construct on first use.
@@ -111,22 +117,36 @@ function main(): void {
   }
 
   const startBackendForActiveProfile = async (): Promise<void> => {
-    const profile = providerStore.getActive()
-    if (profile === null) {
-      showOnboarding()
-      return
-    }
-    const apiKey = getSecretStore().get(profile.id) ?? ''
-    const mode = configStore.read().mode
     await stopBackend()
-    const running = await launchBackend({
-      home: dshHome,
-      profile,
-      apiKey,
-      mode,
-      workspaceDir: workspaceDirFor(),
-      capabilities: capabilitiesStore.read(),
-    })
+    let running: RunningBackend
+    if (dshMode === 'system-sync') {
+      // Boot the user's own DSH untouched: shared sessions, profiles, plugins
+      // and settings from their web DSH. CloserAI never writes into it.
+      running = await launchBackend({
+        home: dshHome,
+        profile: null,
+        apiKey: '',
+        mode: null,
+        workspaceDir: homedir(),
+        manage: false,
+      })
+    } else {
+      const profile = providerStore.getActive()
+      if (profile === null) {
+        showOnboarding()
+        return
+      }
+      const apiKey = getSecretStore().get(profile.id) ?? ''
+      const mode = configStore.read().mode
+      running = await launchBackend({
+        home: dshHome,
+        profile,
+        apiKey,
+        mode,
+        workspaceDir: workspaceDirFor(),
+        capabilities: capabilitiesStore.read(),
+      })
+    }
     backend = running
 
     running.dsh.supervisor.on('ready', (status) => {

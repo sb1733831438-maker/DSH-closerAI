@@ -206,3 +206,20 @@ natives.
 **Why:** pnpm's isolated layout (symlinks into a virtual store) cannot be packed
 reliably by electron-builder on any OS; a flat npm tree is small (258 MB vs 683 MB),
 has no symlinks, and boots DSH unchanged.
+
+## D-021 — System DSH home sync (desktop == web DSH)
+
+**Decision:** The desktop app resolves its DSH home via `resolveDshHome`:
+`CLOSERAI_DSH_HOME` (explicit) wins; otherwise, if the system DSH home
+(`~/.dsh`) exists, the desktop boots the user's own DSH in **system-sync**
+mode — shared sessions, profiles, plugins and settings, and CloserAI never
+writes provider/preset settings into it; otherwise it falls back to an
+isolated managed home (`<userData>/dsh-home`). The smoke test forces a fresh
+managed temp home so CI stays deterministic.
+
+**Why:** The user runs their web DSH on `~/.dsh`; the desktop previously used
+an isolated home, so conversations and plugins did not carry over. Syncing
+makes the desktop indistinguishable from the web DSH. A single-owner plugin
+(e.g. task-board's ledger lock) prevents a SECOND DSH on the same home, so
+system-sync requires no other DSH running on that home — documented in
+TROUBLESHOOTING.
