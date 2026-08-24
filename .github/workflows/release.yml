@@ -39,7 +39,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path runtime-flat | Out-Null
           Push-Location runtime-flat
           npm init -y | Out-Null
-          npm install --no-audit --no-fund @deepseek-ai/dsh@0.1.0-rc.6
+          npm install --no-audit --no-fund --ignore-scripts @deepseek-ai/dsh@0.1.0-rc.6
           Pop-Location
 
       - name: Package Windows installer
