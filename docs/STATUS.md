@@ -87,6 +87,20 @@ Nothing at the moment.
 2. v0.0.9 → v0.1.0: release-candidate hardening, docs, and full acceptance.
 3. v0.0.9 → v0.1.0: release-candidate hardening, docs, and full acceptance.
 
+## v0.2.0 — System DSH Sync (released)
+
+- The desktop app boots the user's own DSH (DSH_HOME=~/.dsh) when it exists,
+  so sessions, profiles, plugins and settings match the web DSH; it never
+  overwrites the system home in sync mode. CLOSERAI_DSH_HOME / CLOSERAI_DSH_MODE
+  pin an explicit home or force a mode; fresh installs fall back to an isolated
+  home. Smoke forces a fresh managed temp home (CI deterministic).
+- Known limitation: a single-owner plugin (task-board ledger lock) blocks a
+  second DSH on the same home, so do not run the web DSH and the desktop
+  concurrently on one home.
+- CI note: the runtime npm install was intermittently slow on the Windows
+  runner (native-script compile); the workflow now uses --ignore-scripts
+  (node-pty win32 prebuilds ship in the tarball).
+
 ## Packaging status (v0.0.8 — RELEASED)
 
 - The Windows installer `CloserAI-0.0.8-Setup-x64.exe` + `SHA256SUMS.txt` are built by
