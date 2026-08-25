@@ -1,5 +1,9 @@
 appId: com.closerai.app
 productName: CloserAI
+publish:
+  provider: github
+  owner: sb1733831438-maker
+  repo: DSH-closerAI
 directories:
   output: release
   buildResources: build-resources

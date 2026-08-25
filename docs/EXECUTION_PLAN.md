@@ -94,10 +94,10 @@ and test evidence.
 
 ### v0.3.x — Sync experience polish + product loop
 
-- [ ] Manage-page "system DSH sync" status banner (v0.3.0)
-- [ ] Graceful concurrent-DSH handling: friendly message when `~/.dsh` is
-      already owned (task-board single-owner lock) instead of a silent crash
-- [ ] Auto-update framework (electron-updater + GitHub Releases; NSIS supports
+- [x] Manage-page "system DSH sync" status banner (v0.3.0)
+- [x] Graceful concurrent-DSH handling: friendly message + stale-lock self-heal
+      when `~/.dsh` is already owned (task-board single-owner lock)
+- [x] Auto-update framework (electron-updater + GitHub Releases; NSIS supports
       differential updates)
 - [ ] Installer code-signing (remove SmartScreen warning)
 

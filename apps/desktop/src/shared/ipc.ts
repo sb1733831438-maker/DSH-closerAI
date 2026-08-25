@@ -10,6 +10,7 @@ import type {
   ProjectStoreData,
   ProviderProfile,
   SessionEntry,
+  UpdateStatus,
 } from './types.js'
 
 /** IPC channel names shared by the main process and the preload bridge. */
@@ -41,6 +42,8 @@ export const IPC = {
   appExportDiagnostics: 'app:export-diagnostics',
   launchAtLoginGet: 'app:launch-at-login:get',
   launchAtLoginSet: 'app:launch-at-login:set',
+  updateCheck: 'update:check',
+  updateInstall: 'update:install',
 } as const
 
 export interface SaveProviderInput {
@@ -84,4 +87,6 @@ export interface CloserAiBridge {
   exportDiagnostics(destDir: string): Promise<OpResult>
   getLaunchAtLogin(): Promise<boolean>
   setLaunchAtLogin(enabled: boolean): Promise<OpResult>
+  checkForUpdates(): Promise<UpdateStatus>
+  installUpdate(): Promise<UpdateStatus>
 }

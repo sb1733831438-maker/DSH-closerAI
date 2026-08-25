@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
@@ -55,4 +55,48 @@ export function describeDshStartFailure(error: unknown): string | null {
     return '检测到另一个 DSH 正在使用同一 DSH 目录（很可能是你的 web 端 DSH 正在运行）。请先关闭它，再重新打开 CloserAI。'
   }
   return null
+}
+
+function defaultIsAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Remove a stale task-board ledger lock when its owning process is dead.
+ * The @linxin666/dsh-client-ui-task-board plugin refuses to boot a second DSH
+ * on the same home while the lock file exists, even after a crash; this lets
+ * CloserAI self-heal and retry instead of bricking the user's web DSH.
+ * Returns true when a stale lock was removed.
+ */
+export async function clearStaleTaskBoardLock(
+  dshHome: string,
+  isAlive: (pid: number) => boolean = defaultIsAlive,
+): Promise<boolean> {
+  const lockPath = join(dshHome, 'task-board', 'ledger-v2.lock')
+  let raw: string
+  try {
+    raw = readFileSync(lockPath, 'utf8')
+  } catch {
+    return false // no lock file -> nothing to clear
+  }
+  let pid: number
+  try {
+    const parsed = JSON.parse(raw) as { pid?: unknown }
+    pid = typeof parsed.pid === 'number' ? parsed.pid : Number(parsed.pid)
+    if (!Number.isFinite(pid)) return false
+  } catch {
+    return false // corrupt lock -> leave it for manual handling
+  }
+  if (isAlive(pid)) return false // a live DSH host owns the home -> don't touch it
+  try {
+    rmSync(lockPath, { force: true })
+    return true
+  } catch {
+    return false
+  }
 }

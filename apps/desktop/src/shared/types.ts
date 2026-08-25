@@ -142,3 +142,13 @@ export interface ModePermissions {
   mode: Mode
   entries: PermissionEntry[]
 }
+
+/** Auto-update status surfaced to the shell UI. */
+export type UpdateStatus =
+  | { state: 'disabled' }
+  | { state: 'checking' }
+  | { state: 'up-to-date' }
+  | { state: 'available'; version: string }
+  | { state: 'downloading'; percent: number }
+  | { state: 'downloaded'; version: string }
+  | { state: 'error'; message: string }

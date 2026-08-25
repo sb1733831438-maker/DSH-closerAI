@@ -27,13 +27,17 @@ DSH 作为 Agent 运行时的同时，新增了桌面监督器（Supervisor）�
 - **原生桌面** —— 系统托盘、崩溃/恢复通知、开机启动。
 - **透明设计** —— 管理页展示能力开关、各模式权限清单与脱敏诊断日志。
 - **模型无关** —— 支持 DeepSeek、任意 OpenAI 兼容接口，以及完全离线的 **Mock 模式**（无需密钥）。
+- **系统 DSH 同步** —— 存在系统 DSH 目录（`~/.dsh`）时，桌面端直接启动你自己的 DSH：会话、插件、设置与 web 端完全一致（且绝不覆盖其配置）。
+- **官方 DeepSeek 虎鲸图标** —— 应用、安装包与任务栏使用官方 DeepSeek 鲸鱼 logo。
+- **同步体验** —— 工作区页显示「已与系统 DSH 同步」横幅；共享目录被另一个 DSH 锁定时给出友好提示而非静默崩溃。
+- **自动更新** —— 内置更新器（electron-updater + GitHub Releases），可在工作区页检查更新。
 
 ## 🚀 快速开始
 
 **方式 A —— 安装 Windows 版（推荐）**
 
-1. 下载 [CloserAI-0.1.0-Setup-x64.exe](https://github.com/sb1733831438-maker/DSH-closerAI/releases/latest)。
-2. 用 `SHA256SUMS.txt` 校验 SHA-256（Windows：`Get-FileHash -Algorithm SHA256 .\CloserAI-0.1.0-Setup-x64.exe`）。
+1. 下载 [CloserAI-0.4.0-Setup-x64.exe](https://github.com/sb1733831438-maker/DSH-closerAI/releases/latest)。
+2. 用 `SHA256SUMS.txt` 校验 SHA-256（Windows：`Get-FileHash -Algorithm SHA256 .\CloserAI-0.4.0-Setup-x64.exe`）。
 3. 运行安装包，启动后选择 **Mock 模式** 即可零配置体验。
 
 > 安装包尚未代码签名——若 SmartScreen 提示，请选择「更多信息 → 仍要运行」，并以校验和为准。
@@ -71,7 +75,7 @@ cd apps/desktop
 pnpm run pack     # 构建 Windows 安装包（release/CloserAI-*-Setup-x64.exe）
 ```
 
-新增功能必须保持 `pnpm check` 全绿（120 项测试）与 `pnpm smoke` 通过。扩展模式/预设请参考
+新增功能必须保持 `pnpm check` 全绿（136 项测试）与 `pnpm smoke` 通过。扩展模式/预设请参考
 [docs/PLUGIN_DEV.md](docs/PLUGIN_DEV.md)。
 
 ## 📚 文档
@@ -95,6 +99,10 @@ pnpm run pack     # 构建 Windows 安装包（release/CloserAI-*-Setup-x64.exe�
 | v0.0.8     | 首个 Windows 安装包 + 打包运行时修复                       | 已发布     |
 | v0.0.9     | RC 硬化：声明、安全与健壮性测试、手册                      | 已发布     |
 | **v0.1.0** | **可日常使用：Windows 安装包 + 校验和**                    | **已发布** |
+| v0.2.0     | 系统 DSH home 同步：桌面端 == 你的 web 端 DSH              | 已发布     |
+| v0.2.1     | 官方 DeepSeek 虎鲸应用图标                                 | 已发布     |
+| v0.3.0     | 同步体验：工作区横幅 + 并发 DSH 友好处理                   | 已发布     |
+| **v0.4.0** | **自动更新（electron-updater）+ 陈旧锁自愈**               | **已发布** |
 
 ## 📄 许可证
 

@@ -45,6 +45,31 @@ export function Manage(): React.JSX.Element {
   const [mode, setMode] = useState<Mode>('chat')
   const [workspaceDir, setWorkspaceDir] = useState('')
 
+  const [updateInfo, setUpdateInfo] = useState('')
+
+  const onCheckUpdate = async (): Promise<void> => {
+    setUpdateInfo('正在检查更新…')
+    try {
+      const status = await window.closerai.checkForUpdates()
+      setUpdateInfo(
+        status.state === 'disabled'
+          ? '当前为开发/便携版，不支持自动更新'
+          : status.state === 'checking'
+            ? '正在检查更新…'
+            : status.state === 'up-to-date'
+              ? '已是最新版本'
+              : status.state === 'available'
+                ? '发现新版本 ' + status.version + '，可在诊断页安装'
+                : status.state === 'downloading'
+                  ? '正在下载更新… ' + Math.round(status.percent) + '%'
+                  : status.state === 'downloaded'
+                    ? '更新 ' + status.version + ' 已就绪，重启后生效'
+                    : '更新检查失败：' + status.message,
+      )
+    } catch (e) {
+      setUpdateInfo(errText(e))
+    }
+  }
   const refresh = async (): Promise<void> => {
     const next = await window.closerai.getAppState()
     setState(next)
@@ -216,7 +241,9 @@ export function Manage(): React.JSX.Element {
         <p>管理项目、工作区与会话历史。切换项目会重启当前对话后端。</p>
         <p className="actions">
           <button onClick={() => void window.closerai.openChat()}>返回对话 (Ctrl+Shift+C)</button>
+          <button onClick={() => void onCheckUpdate()}>检查更新</button>
         </p>
+        {updateInfo !== '' && <p className="hint">{updateInfo}</p>}
       </header>
 
       {state.dshMode === 'system-sync' && (

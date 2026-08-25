@@ -13,7 +13,10 @@ import { ProjectStore } from './project-store.js'
 import { createSafeStorageCipher } from './safe-storage-cipher.js'
 import { SecretStore } from './secrets.js'
 import { SessionStore } from './session-store.js'
-import { describeDshStartFailure, resolveDshHome } from './dsh-home.js'
+import { clearStaleTaskBoardLock, describeDshStartFailure, resolveDshHome } from './dsh-home.js'
+import electronUpdater from 'electron-updater'
+const { autoUpdater } = electronUpdater
+import { createUpdateController, type UpdaterLike } from './update.js'
 import {
   applyLaunchAtLogin,
   createTray,
@@ -44,6 +47,10 @@ function main(): void {
   const resolvedHome = isSmokeTest
     ? { home: join(app.getPath('temp'), 'closerai-smoke-' + process.pid), mode: 'managed' as const }
     : resolveDshHome(userData)
+  const updateController = createUpdateController({
+    updater: autoUpdater as unknown as UpdaterLike,
+    isPackaged: () => app.isPackaged,
+  })
   const dshHome = resolvedHome.home
   const dshMode = resolvedHome.mode
   let secretStore: SecretStore | null = null
@@ -118,12 +125,13 @@ function main(): void {
 
   const startBackendForActiveProfile = async (): Promise<void> => {
     await stopBackend()
-    let running: RunningBackend
+    let running: RunningBackend | null = null
     if (dshMode === 'system-sync') {
       // Boot the user's own DSH untouched: shared sessions, profiles, plugins
       // and settings from their web DSH. CloserAI never writes into it. If the
       // home is already owned (e.g. the web DSH is running), stay open and tell
       // the user what to do instead of crashing.
+      let bootError: unknown = null
       try {
         running = await launchBackend({
           home: dshHome,
@@ -134,13 +142,35 @@ function main(): void {
           manage: false,
         })
       } catch (error) {
+        bootError = error
+        // Self-heal: a stale task-board ledger lock (owner process dead) left
+        // behind by a crash bricks the shared home for both desktop and web;
+        // clear it and retry once.
+        if (describeDshStartFailure(error) !== null && (await clearStaleTaskBoardLock(dshHome))) {
+          console.log('[closerai] cleared stale task-board lock; retrying system-sync boot')
+          try {
+            running = await launchBackend({
+              home: dshHome,
+              profile: null,
+              apiKey: '',
+              mode: null,
+              workspaceDir: homedir(),
+              manage: false,
+            })
+            bootError = null
+          } catch (retryError) {
+            bootError = retryError
+          }
+        }
+      }
+      if (bootError !== null) {
         console.error(
           '[closerai] system-sync boot failed:',
-          error instanceof Error ? error.message : error,
+          bootError instanceof Error ? bootError.message : bootError,
         )
         notify(
           'CloserAI — 无法启动系统 DSH',
-          describeDshStartFailure(error) ?? 'DSH 启动失败，请查看诊断信息后重试。',
+          describeDshStartFailure(bootError) ?? 'DSH 启动失败，请查看诊断信息后重试。',
         )
         return
       }
@@ -161,6 +191,7 @@ function main(): void {
         capabilities: capabilitiesStore.read(),
       })
     }
+    if (running === null) return
     backend = running
 
     running.dsh.supervisor.on('ready', (status) => {
@@ -334,6 +365,7 @@ function main(): void {
         void startBackendForActiveProfile()
       },
       dshMode,
+      updateController,
     })
 
     installMenu()

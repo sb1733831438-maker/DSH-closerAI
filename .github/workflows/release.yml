@@ -68,11 +68,12 @@ jobs:
           path: |
             apps/desktop/release/CloserAI-*-Setup-x64.exe
             apps/desktop/release/SHA256SUMS.txt
+            apps/desktop/release/latest.yml
 
       - name: Attach to GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "$env:GITHUB_REF_NAME" "apps/desktop/release/CloserAI-*-Setup-x64.exe" "apps/desktop/release/SHA256SUMS.txt" --clobber
+          gh release upload "$env:GITHUB_REF_NAME" "apps/desktop/release/CloserAI-*-Setup-x64.exe" "apps/desktop/release/SHA256SUMS.txt" "apps/desktop/release/latest.yml" --clobber
         shell: pwsh

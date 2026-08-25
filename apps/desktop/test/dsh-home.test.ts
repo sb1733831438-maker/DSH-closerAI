@@ -1,8 +1,12 @@
-import { mkdtempSync, mkdirSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { describeDshStartFailure, resolveDshHome } from '../src/main/dsh-home.js'
+import {
+  clearStaleTaskBoardLock,
+  describeDshStartFailure,
+  resolveDshHome,
+} from '../src/main/dsh-home.js'
 
 let root: string
 let systemHome: string
@@ -49,6 +53,31 @@ describe('resolveDshHome', () => {
     const resolved = resolveDshHome(userData, systemHome)
     expect(resolved.home).toBe(custom)
     expect(resolved.mode).toBe('system-sync')
+  })
+
+  it('clears a stale task-board lock whose owner is dead', async () => {
+    const home = join(root, 'home-with-lock')
+    const lockDir = join(home, 'task-board')
+    mkdirSync(lockDir, { recursive: true })
+    writeFileSync(join(lockDir, 'ledger-v2.lock'), JSON.stringify({ pid: 999999, token: 't' }))
+    const cleared = await clearStaleTaskBoardLock(home, () => false)
+    expect(cleared).toBe(true)
+    expect(existsSync(join(lockDir, 'ledger-v2.lock'))).toBe(false)
+  })
+
+  it('does not clear a lock whose owner is alive', async () => {
+    const home = join(root, 'home-live-lock')
+    const lockDir = join(home, 'task-board')
+    mkdirSync(lockDir, { recursive: true })
+    writeFileSync(join(lockDir, 'ledger-v2.lock'), JSON.stringify({ pid: 42, token: 't' }))
+    const cleared = await clearStaleTaskBoardLock(home, () => true)
+    expect(cleared).toBe(false)
+    expect(existsSync(join(lockDir, 'ledger-v2.lock'))).toBe(true)
+  })
+
+  it('returns false when no lock file exists', async () => {
+    const cleared = await clearStaleTaskBoardLock(join(root, 'empty-home'))
+    expect(cleared).toBe(false)
   })
 
   it('maps the task-board single-owner lock to a friendly message', () => {

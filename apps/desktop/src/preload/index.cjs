@@ -31,12 +31,14 @@ const IPC = {
   appExportDiagnostics: 'app:export-diagnostics',
   launchAtLoginGet: 'app:launch-at-login:get',
   launchAtLoginSet: 'app:launch-at-login:set',
+  updateCheck: 'update:check',
+  updateInstall: 'update:install',
 }
 
 /** @type {import('../shared/ipc').CloserAiBridge} */
 const api = Object.freeze({
   platform: process.platform,
-  appVersion: '0.3.0',
+  appVersion: '0.4.0',
   listProviders: () => ipcRenderer.invoke(IPC.providersList),
   getActiveProvider: () => ipcRenderer.invoke(IPC.providersActive),
   getDefaults: () => ipcRenderer.invoke(IPC.providersDefaults),
@@ -58,6 +60,8 @@ const api = Object.freeze({
   openChat: () => ipcRenderer.invoke(IPC.navChat),
   openManage: () => ipcRenderer.invoke(IPC.navManage),
   pickDirectory: () => ipcRenderer.invoke(IPC.dialogPickDirectory),
+  checkForUpdates: () => ipcRenderer.invoke(IPC.updateCheck),
+  installUpdate: () => ipcRenderer.invoke(IPC.updateInstall),
 })
 
 contextBridge.exposeInMainWorld('closerai', api)

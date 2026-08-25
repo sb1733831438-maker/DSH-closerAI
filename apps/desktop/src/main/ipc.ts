@@ -25,8 +25,10 @@ import type {
   Diagnostics,
   OpResult,
   Project,
+  UpdateStatus,
 } from '../shared/types.js'
 import { IPC, type SaveProviderInput, type TestProviderInput } from '../shared/ipc.js'
+import type { UpdateController } from './update.js'
 
 export interface IpcDeps {
   providerStore: ProviderStoreFile
@@ -56,6 +58,8 @@ export interface IpcDeps {
   setLaunchAtLogin: (enabled: boolean) => void
   /** DSH home mode surfaced to the shell UI (sync banner). */
   dshMode: 'system-sync' | 'managed'
+  /** Auto-update controller (electron-updater wrapper). */
+  updateController: UpdateController
 }
 
 function ok(): OpResult {
@@ -311,6 +315,12 @@ export function registerIpcHandlers(deps: IpcDeps): void {
       return fail(error)
     }
   })
+
+  ipcMain.handle(IPC.updateCheck, async (): Promise<UpdateStatus> => deps.updateController.check())
+
+  ipcMain.handle(IPC.updateInstall, async (): Promise<UpdateStatus> =>
+    deps.updateController.install(),
+  )
 
   ipcMain.handle(IPC.dialogPickDirectory, async (): Promise<string | null> => {
     const result = await dialog.showOpenDialog({
