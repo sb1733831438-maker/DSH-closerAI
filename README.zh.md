@@ -36,8 +36,8 @@ DSH 作为 Agent 运行时的同时，新增了桌面监督器（Supervisor）�
 
 **方式 A —— 安装 Windows 版（推荐）**
 
-1. 下载 [CloserAI-0.4.0-Setup-x64.exe](https://github.com/sb1733831438-maker/DSH-closerAI/releases/latest)。
-2. 用 `SHA256SUMS.txt` 校验 SHA-256（Windows：`Get-FileHash -Algorithm SHA256 .\CloserAI-0.4.0-Setup-x64.exe`）。
+1. 下载 [CloserAI-0.4.1-Setup-x64.exe](https://github.com/sb1733831438-maker/DSH-closerAI/releases/latest)。
+2. 用 `SHA256SUMS.txt` 校验 SHA-256（Windows：`Get-FileHash -Algorithm SHA256 .\CloserAI-0.4.1-Setup-x64.exe`）。
 3. 运行安装包，启动后选择 **Mock 模式** 即可零配置体验。
 
 > 安装包尚未代码签名——若 SmartScreen 提示，请选择「更多信息 → 仍要运行」，并以校验和为准。
@@ -102,7 +102,7 @@ pnpm run pack     # 构建 Windows 安装包（release/CloserAI-*-Setup-x64.exe�
 | v0.2.0     | 系统 DSH home 同步：桌面端 == 你的 web 端 DSH              | 已发布     |
 | v0.2.1     | 官方 DeepSeek 虎鲸应用图标                                 | 已发布     |
 | v0.3.0     | 同步体验：工作区横幅 + 并发 DSH 友好处理                   | 已发布     |
-| **v0.4.0** | **自动更新（electron-updater）+ 陈旧锁自愈**               | **已发布** |
+| **v0.4.1** | **自动更新（electron-updater）+ 陈旧锁自愈**               | **已发布** |
 
 ## 📄 许可证
 

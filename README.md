@@ -36,8 +36,8 @@ OS-keychain secrets, and a plugin security model.
 
 **Option A — install the Windows build (recommended)**
 
-1. Download [CloserAI-0.4.0-Setup-x64.exe](https://github.com/sb1733831438-maker/DSH-closerAI/releases/latest).
-2. Verify the SHA-256 against `SHA256SUMS.txt` (Windows: `Get-FileHash -Algorithm SHA256 .\CloserAI-0.4.0-Setup-x64.exe`).
+1. Download [CloserAI-0.4.1-Setup-x64.exe](https://github.com/sb1733831438-maker/DSH-closerAI/releases/latest).
+2. Verify the SHA-256 against `SHA256SUMS.txt` (Windows: `Get-FileHash -Algorithm SHA256 .\CloserAI-0.4.1-Setup-x64.exe`).
 3. Run the installer, then launch CloserAI and pick **Mock mode** to try it with zero configuration.
 
 > The installer is not code-signed yet — if SmartScreen warns, choose _More info → Run anyway_,
@@ -102,7 +102,7 @@ New features must keep `pnpm check` green (136 tests) and `pnpm smoke` passing. 
 | v0.2.0     | System DSH home sync: desktop == your web DSH                             | Released     |
 | v0.2.1     | Official DeepSeek orca app icon                                           | Released     |
 | v0.3.0     | Sync experience: workspace banner + friendly concurrent-DSH handling      | Released     |
-| **v0.4.0** | **Auto-update (electron-updater) + stale-lock self-heal**                 | **Released** |
+| **v0.4.1** | **Auto-update (electron-updater) + stale-lock self-heal**                 | **Released** |
 
 ## 📄 License
 
