@@ -54,6 +54,7 @@ export function createWindow(target: WindowTarget): BrowserWindow {
     minHeight: 600,
     show: false,
     title: 'CloserAI',
+    icon: join(here, '..', '..', 'resources', 'icon.png'),
     webPreferences: hardenedWebPreferences(preloadPath),
   })
 
