@@ -93,6 +93,8 @@ export interface AppState {
   permissions: ModePermissions[]
   launchAtLogin: boolean
   backendUrl: string | null
+  /** DSH home mode: system-sync (shared ~/.dsh) or managed (isolated). */
+  dshMode: 'system-sync' | 'managed'
 }
 
 /** Per-mode capability toggles applied when installing the agent presets. */

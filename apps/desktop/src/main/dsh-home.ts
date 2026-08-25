@@ -39,3 +39,20 @@ export function resolveDshHome(userData: string, systemHome: string = SYSTEM_HOM
   }
   return { home: join(userData, 'dsh-home'), mode: 'managed' }
 }
+
+/**
+ * Map a DSH boot failure to a friendly, actionable Chinese message, or null
+ * when it is not one of the known conditions. Used in system-sync mode so the
+ * user gets a clear hint (e.g. "close the web DSH first") instead of a raw
+ * crash report.
+ */
+export function describeDshStartFailure(error: unknown): string | null {
+  const message = error instanceof Error ? error.message : String(error)
+  if (
+    message.includes('task-board ledger is already owned by process') ||
+    message.includes('already owned by process')
+  ) {
+    return '检测到另一个 DSH 正在使用同一 DSH 目录（很可能是你的 web 端 DSH 正在运行）。请先关闭它，再重新打开 CloserAI。'
+  }
+  return null
+}

@@ -54,6 +54,8 @@ export interface IpcDeps {
   getLaunchAtLogin: () => boolean
   /** Apply the login-item state (config + OS), then refresh the tray menu. */
   setLaunchAtLogin: (enabled: boolean) => void
+  /** DSH home mode surfaced to the shell UI (sync banner). */
+  dshMode: 'system-sync' | 'managed'
 }
 
 function ok(): OpResult {
@@ -227,6 +229,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
       permissions: MODE_PERMISSIONS,
       launchAtLogin: deps.getLaunchAtLogin(),
       backendUrl: deps.backendUrl(),
+      dshMode: deps.dshMode,
     }
   })
   ipcMain.handle(IPC.navChat, () => {

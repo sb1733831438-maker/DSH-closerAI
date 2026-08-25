@@ -1,12 +1,22 @@
 # Status
 
-> Last updated: 2026-08-18 — v0.0.7 released.
+> Last updated: 2026-08-25 — v0.3.0 (sync experience) in progress.
 
 ## Current milestone
 
-**v0.0.7 — Native Desktop: complete.** Tray, native notifications, and launch-at-login ship;
-projects/workspaces, session history). Next up:
-**v0.0.8 — Packaging and Security** (Windows installer, checksums, security tests).
+**v0.3.0 — Sync experience polish.** Adds the manage-page "system DSH sync"
+banner (AppState.dshMode) and a friendly message when `~/.dsh` is already
+owned by another DSH (task-board lock) instead of a silent crash. Next up:
+auto-update framework and installer code-signing.
+
+## What is done (v0.2.x)
+
+- v0.2.1 — official DeepSeek black orca app icon (Windows exe/installer +
+  BrowserWindow), 16-512px vector-rendered from the DSH web-frontend favicon.
+- v0.2.0 — System DSH home sync: the desktop boots the user's own DSH
+  (shared sessions/profiles/plugins/settings) when `~/.dsh` exists, never
+  overwriting its config; CLOSERAI_DSH_HOME / CLOSERAI_DSH_MODE overrides;
+  smoke forces a fresh managed temp home (deterministic CI).
 
 ## Repository
 

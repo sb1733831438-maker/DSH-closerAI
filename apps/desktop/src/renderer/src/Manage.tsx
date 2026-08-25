@@ -219,6 +219,28 @@ export function Manage(): React.JSX.Element {
         </p>
       </header>
 
+      {state.dshMode === 'system-sync' && (
+        <div
+          className="banner"
+          style={{
+            background: '#eef4ff',
+            border: '1px solid #c9d8f5',
+            borderRadius: 8,
+            padding: '10px 14px',
+            color: '#22407a',
+            fontSize: 13,
+            lineHeight: 1.5,
+          }}
+        >
+          <strong>已与系统 DSH 同步</strong>
+          <span>
+            {' '}
+            — 会话、插件与设置与你的 web 端 DSH 完全一致（~/.dsh）。请勿同时运行 web
+            端与桌面端，以免冲突。
+          </span>
+        </div>
+      )}
+
       {notice !== '' && <p className="ok">{notice}</p>}
       {error !== '' && <p className="bad">{error}</p>}
 

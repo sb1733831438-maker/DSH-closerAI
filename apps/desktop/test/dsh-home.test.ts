@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { resolveDshHome } from '../src/main/dsh-home.js'
+import { describeDshStartFailure, resolveDshHome } from '../src/main/dsh-home.js'
 
 let root: string
 let systemHome: string
@@ -49,6 +49,18 @@ describe('resolveDshHome', () => {
     const resolved = resolveDshHome(userData, systemHome)
     expect(resolved.home).toBe(custom)
     expect(resolved.mode).toBe('system-sync')
+  })
+
+  it('maps the task-board single-owner lock to a friendly message', () => {
+    const error = new Error(
+      'dsh: plugin tree failed to load: task-board ledger is already owned by process 18240',
+    )
+    expect(describeDshStartFailure(error)).toContain('web 端 DSH')
+  })
+
+  it('returns null for an unknown failure', () => {
+    expect(describeDshStartFailure(new Error('ENOENT: something else'))).toBeNull()
+    expect(describeDshStartFailure('plain string')).toBeNull()
   })
 
   it('treats an explicit home equal to the system home as system-sync', () => {

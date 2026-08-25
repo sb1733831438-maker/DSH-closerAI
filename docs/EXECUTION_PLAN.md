@@ -89,3 +89,30 @@ and test evidence.
 - [x] Fresh-install smoke verified (clean directory install → onboarding → DSH UI → management page, exit 0)
 - [x] GitHub Release all green (tag-triggered workflow success; main CI green)
 - [x] Released.
+
+## Beyond v0.1.0 — Future roadmap
+
+### v0.3.x — Sync experience polish + product loop
+
+- [ ] Manage-page "system DSH sync" status banner (v0.3.0)
+- [ ] Graceful concurrent-DSH handling: friendly message when `~/.dsh` is
+      already owned (task-board single-owner lock) instead of a silent crash
+- [ ] Auto-update framework (electron-updater + GitHub Releases; NSIS supports
+      differential updates)
+- [ ] Installer code-signing (remove SmartScreen warning)
+
+### v0.4.x — Platform & supply-chain trust
+
+- [ ] macOS / Linux installers (generalize the Windows-runner packaging strategy)
+- [ ] SBOM (CycloneDX / Syft) + automated dependency/license gate in CI
+
+### v0.5.x — Capability surface (DSH ecosystem, no fork)
+
+- [ ] MCP server management UI (re-evaluate feasibility as DSH evolves)
+- [ ] Per-project DSH-home isolation & workspace switching visualization
+
+### Long term — "personal AI workstation"
+
+Local-first, multi-provider, project-based workspaces, pluggable toolchain,
+offline-capable. All differentiation lives in the hosting layer (security /
+sync / multi-environment / lifecycle), never in DSH core.

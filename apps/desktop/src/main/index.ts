@@ -13,7 +13,7 @@ import { ProjectStore } from './project-store.js'
 import { createSafeStorageCipher } from './safe-storage-cipher.js'
 import { SecretStore } from './secrets.js'
 import { SessionStore } from './session-store.js'
-import { resolveDshHome } from './dsh-home.js'
+import { describeDshStartFailure, resolveDshHome } from './dsh-home.js'
 import {
   applyLaunchAtLogin,
   createTray,
@@ -121,15 +121,29 @@ function main(): void {
     let running: RunningBackend
     if (dshMode === 'system-sync') {
       // Boot the user's own DSH untouched: shared sessions, profiles, plugins
-      // and settings from their web DSH. CloserAI never writes into it.
-      running = await launchBackend({
-        home: dshHome,
-        profile: null,
-        apiKey: '',
-        mode: null,
-        workspaceDir: homedir(),
-        manage: false,
-      })
+      // and settings from their web DSH. CloserAI never writes into it. If the
+      // home is already owned (e.g. the web DSH is running), stay open and tell
+      // the user what to do instead of crashing.
+      try {
+        running = await launchBackend({
+          home: dshHome,
+          profile: null,
+          apiKey: '',
+          mode: null,
+          workspaceDir: homedir(),
+          manage: false,
+        })
+      } catch (error) {
+        console.error(
+          '[closerai] system-sync boot failed:',
+          error instanceof Error ? error.message : error,
+        )
+        notify(
+          'CloserAI — 无法启动系统 DSH',
+          describeDshStartFailure(error) ?? 'DSH 启动失败，请查看诊断信息后重试。',
+        )
+        return
+      }
     } else {
       const profile = providerStore.getActive()
       if (profile === null) {
@@ -319,6 +333,7 @@ function main(): void {
       onComplete: () => {
         void startBackendForActiveProfile()
       },
+      dshMode,
     })
 
     installMenu()
