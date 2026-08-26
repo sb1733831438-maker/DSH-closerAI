@@ -104,7 +104,7 @@ and test evidence.
 ### v0.4.x — Platform & supply-chain trust
 
 - [ ] macOS / Linux installers (generalize the Windows-runner packaging strategy)
-- [ ] SBOM (CycloneDX / Syft) + automated dependency/license gate in CI
+- [x] SBOM (CycloneDX) + automated dependency/license gate in CI (v0.5.0)
 
 ### v0.5.x — Capability surface (DSH ecosystem, no fork)
 

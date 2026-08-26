@@ -1,6 +1,6 @@
 {
   "name": "@closerai/desktop",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": true,
   "description": "CloserAI Electron desktop shell: hardened window that hosts the DeepSeek Harness web UI.",
   "license": "MIT",

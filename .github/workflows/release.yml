@@ -55,6 +55,9 @@ jobs:
           if (Test-Path "$app\@deepseek-ai\dsh\lib\bin.js") { Write-Host "dsh bin present" }
           if (Test-Path "$app\@closerai\mock-provider") { Write-Host "@closerai/mock-provider present" } else { Write-Error "@closerai MISSING"; exit 1 }
 
+      - name: Generate SBOM (CycloneDX)
+        run: node scripts/generate-sbom.mjs --out apps/desktop/release/SBOM.json
+
       - name: Compute SHA-256
         shell: pwsh
         run: |
@@ -69,11 +72,12 @@ jobs:
             apps/desktop/release/CloserAI-*-Setup-x64.exe
             apps/desktop/release/SHA256SUMS.txt
             apps/desktop/release/latest.yml
+            apps/desktop/release/SBOM.json
 
       - name: Attach to GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "$env:GITHUB_REF_NAME" "apps/desktop/release/CloserAI-*-Setup-x64.exe" "apps/desktop/release/SHA256SUMS.txt" "apps/desktop/release/latest.yml" --clobber
+          gh release upload "$env:GITHUB_REF_NAME" "apps/desktop/release/CloserAI-*-Setup-x64.exe" "apps/desktop/release/SHA256SUMS.txt" "apps/desktop/release/latest.yml" "apps/desktop/release/SBOM.json" --clobber
         shell: pwsh

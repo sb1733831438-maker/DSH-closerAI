@@ -16,7 +16,8 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "build": "pnpm -r build",
-    "check": "pnpm format:check && pnpm lint && pnpm build && pnpm typecheck && pnpm test"
+    "sbom:gen": "node scripts/generate-sbom.mjs",
+    "check": "pnpm format:check && pnpm lint && pnpm build && pnpm typecheck && pnpm test && pnpm sbom:gen"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

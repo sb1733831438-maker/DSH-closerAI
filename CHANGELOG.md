@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-08-26
+
+### SBOM + supply-chain gate
+
+- New `scripts/generate-sbom.mjs` emits a **CycloneDX 1.5** SBOM (973
+  components with name/version/license/purl) and fails when any component has
+  no declared license.
+- Wired into `pnpm check` (`pnpm sbom:gen`) so CI enforces it, and the
+  release workflow uploads `SBOM.json` alongside the installer + checksum.
+
+### Verified
+
+- `pnpm check` green (136 tests + SBOM gate); sbom.json committed to the repo.
+
 ## [0.4.1] - 2026-08-25
 
 ### Fix
