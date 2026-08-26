@@ -81,3 +81,67 @@ jobs:
         run: |
           gh release upload "$env:GITHUB_REF_NAME" "apps/desktop/release/CloserAI-*-Setup-x64.exe" "apps/desktop/release/SHA256SUMS.txt" "apps/desktop/release/latest.yml" "apps/desktop/release/SBOM.json" --clobber
         shell: pwsh
+  cross-installer:
+    name: ${{ matrix.platform }} installer
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+            script: pack:mac
+            asset_glob: 'CloserAI-*-*.dmg'
+            update_yml: 'latest-mac.yml'
+          - os: ubuntu-latest
+            platform: linux
+            script: pack:linux
+            asset_glob: 'CloserAI-*-*.AppImage'
+            update_yml: 'latest-linux.yml'
+    runs-on: ${{ matrix.os }}
+    env:
+      # No code-signing cert for mac yet; build unsigned.
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.21.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace deps + desktop
+        run: pnpm -r build
+
+      - name: Prepare flat runtime node_modules (npm)
+        shell: bash
+        run: |
+          mkdir -p runtime-flat
+          cd runtime-flat
+          npm init -y >/dev/null 2>&1
+          npm install --no-audit --no-fund --ignore-scripts @deepseek-ai/dsh@0.1.0-rc.6
+
+      - name: Package ${{ matrix.platform }} installer
+        env:
+          CLOSERAI_RUNTIME_NODE_MODULES: ${{ github.workspace }}/runtime-flat/node_modules
+        run: pnpm --filter @closerai/desktop run ${{ matrix.script }}
+
+      - name: Verify packaged DSH runtime is complete
+        run: |
+          find apps/desktop/release -path '*resources/app/node_modules/@deepseek-ai/dsh/lib' -type d | head -1
+          find apps/desktop/release -path '*resources/app/node_modules/@closerai' -type d | head -1
+          find apps/desktop/release -name '*.dmg' -o -name '*.AppImage' | head -3
+
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$env:GITHUB_REF_NAME" apps/desktop/release/${{ matrix.asset_glob }} apps/desktop/release/${{ matrix.update_yml }} --clobber
+        shell: pwsh

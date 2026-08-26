@@ -1,5 +1,22 @@
 # Status
 
+> Last updated: 2026-08-26 — v0.6.0 (SBOM + macOS/Linux installers).
+
+## Current milestone
+
+**v0.6.0 — Supply-chain transparency + cross-platform.** CycloneDX SBOM
+(973 components) wired into `pnpm check` and uploaded per release; macOS
+(dmg x64/arm64) and Linux (AppImage) installers via a cross-installer matrix
+in the release workflow (unsigned mac; Linux node-pty degraded under
+`--ignore-scripts`).
+
+## What is done (v0.4.x)
+
+- v0.4.1 — auto-update (electron-updater + latest.yml) and stale task-board
+  lock self-heal; `--publish never` pack fix.
+
+# Status
+
 > Last updated: 2026-08-25 — v0.3.0 (sync experience) in progress.
 
 ## Current milestone

@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-08-26
+
+### macOS + Linux installers
+
+- Cross-platform packaging: `pack:mac` (dmg, x64 + arm64, unsigned) and
+  `pack:linux` (AppImage, x64) added to electron-builder.
+- Release workflow gains a cross-installer matrix job that installs the DSH
+  runtime on each target OS and uploads `CloserAI-*.dmg` / `CloserAI-*.AppImage`
+  plus `latest-mac.yml` / `latest-linux.yml` for per-platform auto-update.
+
+> Note: macOS builds are unsigned (no cert yet — Gatekeeper will prompt); Linux
+> node-pty uses `--ignore-scripts` so the terminal feature may be degraded
+> (core chat/agent works).
+
 ## [0.5.0] - 2026-08-26
 
 ### SBOM + supply-chain gate

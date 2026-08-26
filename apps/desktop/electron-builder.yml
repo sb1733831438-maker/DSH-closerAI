@@ -34,3 +34,22 @@ npmRebuild: false
 afterPack: scripts/copy-runtime-node-modules.js
 electronDownload:
   cache: null
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  category: public.app-category.developer-tools
+  icon: build-resources/icon.png
+  hardenedRuntime: false
+  gatekeeperAssess: false
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  category: Development
+  icon: build-resources/icon.png
+  maintainer: CloserAI contributors
+  synopsis: DeepSeek Harness desktop client

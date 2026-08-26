@@ -103,7 +103,7 @@ and test evidence.
 
 ### v0.4.x — Platform & supply-chain trust
 
-- [ ] macOS / Linux installers (generalize the Windows-runner packaging strategy)
+- [x] macOS / Linux installers (dmg + AppImage via cross-installer matrix) (v0.6.0)
 - [x] SBOM (CycloneDX) + automated dependency/license gate in CI (v0.5.0)
 
 ### v0.5.x — Capability surface (DSH ecosystem, no fork)

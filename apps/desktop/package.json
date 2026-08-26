@@ -1,6 +1,6 @@
 {
   "name": "@closerai/desktop",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "description": "CloserAI Electron desktop shell: hardened window that hosts the DeepSeek Harness web UI.",
   "license": "MIT",
@@ -14,6 +14,8 @@
     "start": "electron .",
     "smoke": "electron . --smoke-test",
     "pack": "electron-builder --config electron-builder.yml --win nsis --publish never",
+    "pack:mac": "electron-builder --config electron-builder.yml --mac --publish never",
+    "pack:linux": "electron-builder --config electron-builder.yml --linux --publish never",
     "pack:dir": "electron-builder --config electron-builder.yml --dir"
   },
   "dependencies": {
