@@ -1,5 +1,5 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { atomicWriteFileSync } from './fs-atomic.js'
 import type { ProviderProfile, ProviderStore } from './providers.js'
 
 const EMPTY_STORE: ProviderStore = { activeProviderId: null, providers: [] }
@@ -22,15 +22,15 @@ export class ProviderStoreFile {
       const activeProviderId =
         typeof store.activeProviderId === 'string' ? store.activeProviderId : null
       return { activeProviderId, providers: [...providers] }
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { ...EMPTY_STORE }
-      throw error
+    } catch {
+      // Missing file, unreadable, or corrupt content all self-heal to the
+      // empty defaults instead of crashing the app (REVIEW R-03).
+      return { ...EMPTY_STORE }
     }
   }
 
   write(store: ProviderStore): void {
-    mkdirSync(dirname(this.filePath), { recursive: true })
-    writeFileSync(this.filePath, `${JSON.stringify(store, null, 2)}\n`, 'utf8')
+    atomicWriteFileSync(this.filePath, `${JSON.stringify(store, null, 2)}\n`)
   }
 
   getActive(): ProviderProfile | null {

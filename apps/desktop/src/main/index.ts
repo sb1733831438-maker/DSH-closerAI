@@ -134,7 +134,12 @@ function main(): void {
     setTarget({ kind: 'file', path: onboardingPath })
   }
 
-  const startBackendForActiveProfile = async (): Promise<void> => {
+  // Serialize backend (re)starts: every mode change / project activation /
+  // onboarding-complete triggers one, and concurrent calls must never spawn
+  // two DSH instances or race stopBackend() against launchBackend() (R-02).
+  let restartChain: Promise<void> | null = null
+
+  const doStartBackend = async (): Promise<void> => {
     await stopBackend()
     let running: RunningBackend | null = null
     if (dshMode === 'system-sync') {
@@ -284,6 +289,14 @@ function main(): void {
         app.exit(1)
       })
     }
+  }
+
+  const startBackendForActiveProfile = (): Promise<void> => {
+    const next = (restartChain ?? Promise.resolve())
+      .catch(() => undefined)
+      .then(() => doStartBackend())
+    restartChain = next
+    return next
   }
 
   const installMenu = (): void => {
@@ -446,7 +459,13 @@ function main(): void {
     void stopBackend().finally(() => app.quit())
   })
 
-  void app.whenReady().then(boot)
+  void app.whenReady().then(boot).catch((error) => {
+    // Never leave an unhandled rejection from boot(): surface it and exit
+    // with a code instead of silently hanging (REVIEW R-03).
+    console.error('[closerai] boot crashed:', error instanceof Error ? error.stack ?? error.message : error)
+    notify('CloserAI — 启动失败', '出现未预期的启动错误，应用将退出。请查看诊断信息后重试。')
+    app.exit(1)
+  })
 }
 
 if (!app.requestSingleInstanceLock()) {

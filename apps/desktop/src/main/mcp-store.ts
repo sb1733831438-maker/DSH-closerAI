@@ -1,5 +1,6 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { atomicWriteFileSync } from './fs-atomic.js'
 import type { SecretCipher } from './secrets.js'
 import type { McpServer, McpStoreData } from '../shared/types.js'
 
@@ -115,8 +116,7 @@ export class McpStoreFile {
   }
 
   write(store: McpStoreData): void {
-    mkdirSync(dirname(this.filePath), { recursive: true })
-    writeFileSync(this.filePath, `${JSON.stringify(store, null, 2)}\n`, 'utf8')
+    atomicWriteFileSync(this.filePath, `${JSON.stringify(store, null, 2)}\n`)
   }
 
   /** Renderer-facing view: env/header values masked, never the real secrets. */

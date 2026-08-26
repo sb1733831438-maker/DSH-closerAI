@@ -1,5 +1,5 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { atomicWriteFileSync } from './fs-atomic.js'
 import type { CreateProjectInput, Mode, Project, ProjectStoreData } from '../shared/types.js'
 
 const DEFAULT_DATA: ProjectStoreData = { activeProjectId: null, projects: [] }
@@ -50,18 +50,14 @@ export class ProjectStore {
   read(): ProjectStoreData {
     try {
       return parseData(JSON.parse(readFileSync(this.filePath, 'utf8')))
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        // fresh arrays every call: never return a shared singleton, or a
-        // shallow copy would leak mutations from one instance into all others
-        return { activeProjectId: null, projects: [] }
-      }
-      throw error
+    } catch {
+      // Missing file, unreadable, or corrupt content all self-heal to the
+      // empty defaults instead of crashing the app (REVIEW R-03).
+      return { activeProjectId: null, projects: [] }
     }
   }
   write(data: ProjectStoreData): void {
-    mkdirSync(dirname(this.filePath), { recursive: true })
-    writeFileSync(this.filePath, JSON.stringify(data, null, 2) + '\n', 'utf8')
+    atomicWriteFileSync(this.filePath, JSON.stringify(data, null, 2) + '\n')
   }
 
   list(): Project[] {

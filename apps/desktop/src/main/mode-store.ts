@@ -1,5 +1,5 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { atomicWriteFileSync } from './fs-atomic.js'
 import type { AppConfig, Mode } from '../shared/types.js'
 
 const DEFAULT_CONFIG: AppConfig = { mode: 'chat', workspaceDir: null, launchAtLogin: false }
@@ -26,14 +26,14 @@ export class AppConfigStore {
       const workspaceDir = typeof record.workspaceDir === 'string' ? record.workspaceDir : null
       const launchAtLogin = typeof record.launchAtLogin === 'boolean' ? record.launchAtLogin : false
       return { mode, workspaceDir, launchAtLogin }
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { ...DEFAULT_CONFIG }
-      throw error
+    } catch {
+      // Missing file, unreadable, or corrupt content all self-heal to the
+      // defaults instead of crashing the app (REVIEW R-03).
+      return { ...DEFAULT_CONFIG }
     }
   }
 
   write(config: AppConfig): void {
-    mkdirSync(dirname(this.filePath), { recursive: true })
-    writeFileSync(this.filePath, `${JSON.stringify(config, null, 2)}\n`, 'utf8')
+    atomicWriteFileSync(this.filePath, `${JSON.stringify(config, null, 2)}\n`)
   }
 }

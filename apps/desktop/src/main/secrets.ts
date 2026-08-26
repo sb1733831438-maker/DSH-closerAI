@@ -1,5 +1,5 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { atomicWriteFileSync } from './fs-atomic.js'
 
 /** Encryption primitive supplied by the host (Electron safeStorage in prod). */
 export interface SecretCipher {
@@ -30,15 +30,15 @@ export class SecretStore {
         if (typeof value === 'string') entries[key] = value
       }
       return entries
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return {}
-      throw error
+    } catch {
+      // Missing file, unreadable, or corrupt content all self-heal to an
+      // empty document instead of crashing the app (REVIEW R-03).
+      return {}
     }
   }
 
   private writeDocument(entries: Record<string, string>): void {
-    mkdirSync(dirname(this.filePath), { recursive: true })
-    writeFileSync(this.filePath, `${JSON.stringify(entries, null, 2)}\n`, { mode: 0o600 })
+    atomicWriteFileSync(this.filePath, `${JSON.stringify(entries, null, 2)}\n`, 0o600)
   }
 
   get(id: string): string | null {
