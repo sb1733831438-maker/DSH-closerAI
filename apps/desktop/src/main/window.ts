@@ -29,24 +29,18 @@ function isAppIndexNavigation(url: string): boolean {
   }
 }
 
-function targetOrigin(target: WindowTarget): string | null {
-  if (target.kind === 'url') {
-    try {
-      return new URL(target.url).origin
-    } catch {
-      return null
-    }
-  }
-  return null
-}
-
 /**
  * Create the single hardened BrowserWindow. Security posture: strict CSP on
- * every HTTP response, navigation locked to the target origin (file targets
- * allow no navigation at all), new windows denied with external http/https
- * links opened in the system browser, and every permission request denied.
+ * every HTTP response, navigation locked to the current backend origin (the
+ * live DSH loopback origin, not the origin captured at window creation, so a
+ * backend restart on a new port stays unlockable — REVIEW R-11), new windows
+ * denied with external http/https links opened in the system browser, and
+ * every permission request denied.
  */
-export function createWindow(target: WindowTarget): BrowserWindow {
+export function createWindow(
+  target: WindowTarget,
+  getCurrentOrigin: () => string | null,
+): BrowserWindow {
   const window = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -67,10 +61,10 @@ export function createWindow(target: WindowTarget): BrowserWindow {
     })
   })
 
-  const origin = targetOrigin(target)
   window.webContents.on('will-navigate', (event, url) => {
     if (isAppIndexNavigation(url)) return
-    const allowed = origin !== null && isAllowedInternalNavigation(url, origin)
+    const currentOrigin = getCurrentOrigin()
+    const allowed = currentOrigin !== null && isAllowedInternalNavigation(url, currentOrigin)
     if (!allowed) {
       event.preventDefault()
       if (externalNavigationAction(url) === 'open') void shell.openExternal(url)

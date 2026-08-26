@@ -11,7 +11,7 @@ import { MOCK_DEFAULT } from './providers.js'
 import { ProviderStoreFile } from './provider-store.js'
 import { ProjectStore } from './project-store.js'
 import { createSafeStorageCipher } from './safe-storage-cipher.js'
-import { SecretStore } from './secrets.js'
+import { SecretStore, type SecretCipher } from './secrets.js'
 import { SessionStore } from './session-store.js'
 import { clearStaleTaskBoardLock, describeDshStartFailure, resolveDshHome } from './dsh-home.js'
 import { McpStoreFile } from './mcp-store.js'
@@ -42,7 +42,9 @@ function main(): void {
 
   const userData = app.getPath('userData')
   const providerStore = new ProviderStoreFile(join(userData, 'providers.json'))
-  const mcpStore = new McpStoreFile(join(userData, 'mcp-servers.json'))
+  // safeStorage requires the app to be ready; resolve the cipher lazily.
+  const getCipher = (): SecretCipher => createSafeStorageCipher()
+  const mcpStore = new McpStoreFile(join(userData, 'mcp-servers.json'), getCipher)
   const configStore = new AppConfigStore(join(userData, 'app-config.json'))
   const projectStore = new ProjectStore(join(userData, 'projects.json'))
   const capabilitiesStore = new CapabilitiesStore(join(userData, 'capabilities.json'))
@@ -50,6 +52,10 @@ function main(): void {
     ? { home: join(app.getPath('temp'), 'closerai-smoke-' + process.pid), mode: 'managed' as const }
     : resolveDshHome(userData)
   const updateController = createUpdateController({
+    // SAFETY: Electron autoUpdater and the update.ts UpdaterLike interface both
+    // expose checkForUpdates()/downloadUpdate()/quitAndInstall() with compatible
+    // shapes; autoUpdater is always non-null in the main process, so the cast is
+    // safe and the smoke tests exercise the real autoUpdater path.
     updater: autoUpdater as unknown as UpdaterLike,
     isPackaged: () => app.isPackaged,
   })
@@ -61,7 +67,7 @@ function main(): void {
   const getSecretStore = (): SecretStore => {
     // safeStorage requires the app to be ready; construct on first use.
     if (secretStore === null) {
-      secretStore = new SecretStore(join(userData, 'secrets.bin'), createSafeStorageCipher())
+      secretStore = new SecretStore(join(userData, 'secrets.bin'), getCipher())
     }
     return secretStore
   }
@@ -80,7 +86,9 @@ function main(): void {
 
   const ensureWindow = (): BrowserWindow => {
     if (window === null || window.isDestroyed()) {
-      window = createWindow({ kind: 'file', path: onboardingPath })
+      window = createWindow({ kind: 'file', path: onboardingPath }, () =>
+        backend === null ? null : backend.dsh.url,
+      )
     }
     return window
   }
@@ -108,7 +116,8 @@ function main(): void {
   const setTarget = (
     target: { kind: 'url'; url: string } | { kind: 'file'; path: string },
   ): void => {
-    if (window === null || window.isDestroyed()) window = createWindow(target)
+    if (window === null || window.isDestroyed())
+      window = createWindow(target, () => (backend === null ? null : backend.dsh.url))
     else if (target.kind === 'url') void window.loadURL(target.url)
     else void window.loadFile(target.path)
   }

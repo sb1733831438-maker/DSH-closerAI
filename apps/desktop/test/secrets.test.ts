@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { SecretStore, type SecretCipher } from '../src/main/secrets.js'
+import { storageBackendWarning } from '../src/main/safe-storage-cipher.js'
 
 const fakeCipher: SecretCipher = {
   encrypt: (plaintext) => Buffer.from(`enc:${plaintext}`, 'utf8'),
@@ -24,6 +25,22 @@ function makeStore(): { store: SecretStore; filePath: string } {
 
 afterEach(() => {
   for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true })
+})
+
+describe('storageBackendWarning (R-15)', () => {
+  it('warns when the backend is basic_text (obfuscation, not encryption)', () => {
+    const warning = storageBackendWarning('basic_text')
+    expect(warning).not.toBeNull()
+    expect(warning).toContain('basic_text')
+  })
+
+  it('returns null for real encryption backends', () => {
+    expect(storageBackendWarning('os_crypt')).toBeNull()
+    expect(storageBackendWarning('keychain')).toBeNull()
+    expect(storageBackendWarning('kwallet5')).toBeNull()
+    expect(storageBackendWarning('gnome_libsecret')).toBeNull()
+    expect(storageBackendWarning(undefined)).toBeNull()
+  })
 })
 
 describe('SecretStore', () => {
