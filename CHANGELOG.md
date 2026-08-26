@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-08-26
+
+### Tray icon + CI npm env fix
+
+- System-tray icon is now the official DeepSeek black orca (32x32 transparent),
+  matching the app icon (was a blank placeholder).
+- Release workflow: `NODE_OPTIONS` for the runtime npm install now set via the
+  step `env` (works for both pwsh and bash), fixing the Windows pwsh syntax
+  failure.
+
+## [0.6.1] - 2026-08-26
+
+### Cross-platform fixes
+
+- mac npm install OOM fix (`NODE_OPTIONS=--max-old-space-size=4096`) and Linux
+  AppImage asset glob fix.
+
 ## [0.6.0] - 2026-08-26
 
 ### macOS + Linux installers

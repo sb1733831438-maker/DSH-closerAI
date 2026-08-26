@@ -35,11 +35,13 @@ jobs:
       # native modules (koffi/node-pty) and no symlinks (Windows-safe).
       - name: Prepare flat runtime node_modules (npm)
         shell: pwsh
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
         run: |
           New-Item -ItemType Directory -Force -Path runtime-flat | Out-Null
           Push-Location runtime-flat
           npm init -y | Out-Null
-          NODE_OPTIONS=--max-old-space-size=4096 npm install --no-audit --no-fund --ignore-scripts @deepseek-ai/dsh@0.1.0-rc.6
+          npm install --no-audit --no-fund --ignore-scripts @deepseek-ai/dsh@0.1.0-rc.6
           Pop-Location
 
       - name: Package Windows installer
@@ -121,6 +123,8 @@ jobs:
 
       - name: Prepare flat runtime node_modules (npm)
         shell: bash
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
         run: |
           mkdir -p runtime-flat
           cd runtime-flat

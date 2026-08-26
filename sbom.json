@@ -3,11 +3,11 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-26T06:39:38.132Z",
+    "timestamp": "2026-08-26T07:36:56.886Z",
     "component": {
       "type": "application",
       "name": "@closerai/desktop",
-      "version": "0.6.0",
+      "version": "0.6.2",
       "licenses": [
         {
           "license": {
@@ -664,10 +664,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "@closerai/desktop@0.6.0",
+      "bom-ref": "@closerai/desktop@0.6.2",
       "name": "@closerai/desktop",
-      "version": "0.6.0",
-      "purl": "pkg:npm/@closerai/desktop@0.6.0",
+      "version": "0.6.2",
+      "purl": "pkg:npm/@closerai/desktop@0.6.2",
       "licenses": [
         {
           "license": {
