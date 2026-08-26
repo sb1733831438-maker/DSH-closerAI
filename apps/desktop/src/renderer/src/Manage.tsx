@@ -156,7 +156,7 @@ export function Manage(): React.JSX.Element {
         headers: parseKeyValue(mcpHeaders),
       }
       const result =
-        mcpEditId === null
+        mcpEditId === null || mcpEditId === ''
           ? await window.closerai.addMcpServer(input)
           : await window.closerai.updateMcpServer({ id: mcpEditId, ...input })
       flash(result)

@@ -119,3 +119,49 @@ export interface CloserAiBridge {
   setMcpServerEnabled(id: string, enabled: boolean): Promise<OpResult>
   exportMcpConfig(destDir: string): Promise<OpResult & { path?: string }>
 }
+
+/**
+ * Runtime mirror of the `CloserAiBridge` interface member names.
+ *
+ * The sandboxed preload (src/preload/index.cjs) is plain CommonJS and cannot
+ * be typechecked against the interface, so this list is the executable
+ * contract the preload-contract test enforces: every bridge method must be
+ * implemented by the preload api object. Keep it in sync with the interface.
+ */
+export const BRIDGE_METHODS: readonly string[] = [
+  'listProviders',
+  'getActiveProvider',
+  'getDefaults',
+  'saveProvider',
+  'testProvider',
+  'completeOnboarding',
+  'getMode',
+  'setMode',
+  'getAppState',
+  'listSessions',
+  'deleteSession',
+  'exportSession',
+  'importSession',
+  'listProjects',
+  'createProject',
+  'updateProject',
+  'deleteProject',
+  'activateProject',
+  'openChat',
+  'openManage',
+  'pickDirectory',
+  'getCapabilities',
+  'setCapabilities',
+  'getDiagnostics',
+  'exportDiagnostics',
+  'getLaunchAtLogin',
+  'setLaunchAtLogin',
+  'checkForUpdates',
+  'installUpdate',
+  'listMcpServers',
+  'addMcpServer',
+  'updateMcpServer',
+  'removeMcpServer',
+  'setMcpServerEnabled',
+  'exportMcpConfig',
+]
