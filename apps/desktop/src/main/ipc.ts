@@ -27,8 +27,15 @@ import type {
   Project,
   UpdateStatus,
 } from '../shared/types.js'
-import { IPC, type SaveProviderInput, type TestProviderInput } from '../shared/ipc.js'
+import {
+  IPC,
+  type SaveMcpServerInput,
+  type SaveProviderInput,
+  type TestProviderInput,
+  type UpdateMcpServerInput,
+} from '../shared/ipc.js'
 import type { UpdateController } from './update.js'
+import type { McpStoreFile } from './mcp-store.js'
 
 export interface IpcDeps {
   providerStore: ProviderStoreFile
@@ -60,6 +67,8 @@ export interface IpcDeps {
   dshMode: 'system-sync' | 'managed'
   /** Auto-update controller (electron-updater wrapper). */
   updateController: UpdateController
+  /** CloserAI-managed MCP server registry (userData). */
+  mcpStore: McpStoreFile
 }
 
 function ok(): OpResult {
@@ -329,4 +338,70 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     if (result.canceled || result.filePaths.length === 0) return null
     return result.filePaths[0] ?? null
   })
+
+  ipcMain.handle(IPC.mcpList, () => deps.mcpStore.list())
+
+  ipcMain.handle(IPC.mcpAdd, (_event, input: SaveMcpServerInput) => {
+    if (!input || typeof input.name !== 'string' || input.name.trim() === '') {
+      return { ok: false, error: '服务器名称不能为空' }
+    }
+    if (input.transport !== 'stdio' && input.transport !== 'http') {
+      return { ok: false, error: '不支持的传输类型' }
+    }
+    const server = deps.mcpStore.add({
+      name: input.name,
+      transport: input.transport,
+      description: input.description,
+      command: input.command,
+      args: input.args,
+      env: input.env,
+      url: input.url,
+      headers: input.headers,
+    })
+    return { ok: true, server }
+  })
+
+  ipcMain.handle(IPC.mcpUpdate, (_event, input: UpdateMcpServerInput) => {
+    const server = deps.mcpStore.update(input.id, {
+      name: input.name,
+      transport: input.transport,
+      description: input.description,
+      command: input.command,
+      args: input.args,
+      env: input.env,
+      url: input.url,
+      headers: input.headers,
+    })
+    return server === null ? { ok: false, error: '未找到该 MCP 服务器' } : { ok: true }
+  })
+
+  ipcMain.handle(IPC.mcpRemove, (_event, id: string) => {
+    const removed = deps.mcpStore.remove(id)
+    return removed ? { ok: true } : { ok: false, error: '未找到该 MCP 服务器' }
+  })
+
+  ipcMain.handle(IPC.mcpToggle, (_event, id: string, enabled: boolean) => {
+    const server = deps.mcpStore.setEnabled(id, Boolean(enabled))
+    return server === null ? { ok: false, error: '未找到该 MCP 服务器' } : { ok: true }
+  })
+
+  ipcMain.handle(
+    IPC.mcpExport,
+    async (_event, destDir: string): Promise<{ ok: boolean; path?: string; error?: string }> => {
+      const dir = destDir?.trim()
+      if (!dir) return { ok: false, error: '未选择导出目录' }
+      try {
+        const path = deps.mcpStore.exportPath(dir)
+        const { writeFile } = await import('node:fs/promises')
+        await writeFile(
+          path,
+          JSON.stringify({ mcpServers: deps.mcpStore.toMcpJson() }, null, 2) + '\n',
+          'utf8',
+        )
+        return { ok: true, path }
+      } catch (error) {
+        return { ok: false, error: error instanceof Error ? error.message : String(error) }
+      }
+    },
+  )
 }

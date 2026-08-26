@@ -14,6 +14,7 @@ import { createSafeStorageCipher } from './safe-storage-cipher.js'
 import { SecretStore } from './secrets.js'
 import { SessionStore } from './session-store.js'
 import { clearStaleTaskBoardLock, describeDshStartFailure, resolveDshHome } from './dsh-home.js'
+import { McpStoreFile } from './mcp-store.js'
 import electronUpdater from 'electron-updater'
 const { autoUpdater } = electronUpdater
 import { createUpdateController, type UpdaterLike } from './update.js'
@@ -41,6 +42,7 @@ function main(): void {
 
   const userData = app.getPath('userData')
   const providerStore = new ProviderStoreFile(join(userData, 'providers.json'))
+  const mcpStore = new McpStoreFile(join(userData, 'mcp-servers.json'))
   const configStore = new AppConfigStore(join(userData, 'app-config.json'))
   const projectStore = new ProjectStore(join(userData, 'projects.json'))
   const capabilitiesStore = new CapabilitiesStore(join(userData, 'capabilities.json'))
@@ -340,6 +342,7 @@ function main(): void {
 
     registerIpcHandlers({
       providerStore,
+      mcpStore,
       secretStore: getSecretStore(),
       configStore,
       projectStore,

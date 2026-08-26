@@ -3,6 +3,8 @@ import type {
   AppState,
   Capabilities,
   Diagnostics,
+  McpServer,
+  McpTransport,
   Mode,
   OpResult,
   Project,
@@ -33,6 +35,26 @@ function errText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
+function parseKeyValue(text: string): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const line of text.split(/[\r\n]+/)) {
+    const trimmed = line.trim()
+    if (trimmed === '') continue
+    const eq = trimmed.indexOf('=')
+    const key = (eq >= 0 ? trimmed.slice(0, eq) : trimmed).trim()
+    const value = (eq >= 0 ? trimmed.slice(eq + 1) : '').trim()
+    if (key !== '') out[key] = value
+  }
+  return out
+}
+
+function parseArgs(text: string): string[] {
+  return text
+    .split(/[\s,]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+}
+
 export function Manage(): React.JSX.Element {
   const [state, setState] = useState<AppState | null>(null)
   const [error, setError] = useState('')
@@ -46,6 +68,16 @@ export function Manage(): React.JSX.Element {
   const [workspaceDir, setWorkspaceDir] = useState('')
 
   const [updateInfo, setUpdateInfo] = useState('')
+  const [mcpServers, setMcpServers] = useState<McpServer[] | null>(null)
+  const [mcpName, setMcpName] = useState('')
+  const [mcpTransport, setMcpTransport] = useState<McpTransport>('stdio')
+  const [mcpDesc, setMcpDesc] = useState('')
+  const [mcpCommand, setMcpCommand] = useState('')
+  const [mcpArgs, setMcpArgs] = useState('')
+  const [mcpEnv, setMcpEnv] = useState('')
+  const [mcpUrl, setMcpUrl] = useState('')
+  const [mcpHeaders, setMcpHeaders] = useState('')
+  const [mcpEditId, setMcpEditId] = useState<string | null>(null)
 
   const onCheckUpdate = async (): Promise<void> => {
     setUpdateInfo('正在检查更新…')
@@ -70,6 +102,110 @@ export function Manage(): React.JSX.Element {
       setUpdateInfo(errText(e))
     }
   }
+  const loadMcp = async (): Promise<void> => {
+    try {
+      setMcpServers(await window.closerai.listMcpServers())
+    } catch (e) {
+      setError(errText(e))
+    }
+  }
+
+  const resetMcpForm = (): void => {
+    setMcpEditId(null)
+    setMcpName('')
+    setMcpTransport('stdio')
+    setMcpDesc('')
+    setMcpCommand('')
+    setMcpArgs('')
+    setMcpEnv('')
+    setMcpUrl('')
+    setMcpHeaders('')
+  }
+
+  const startEditMcp = (server: McpServer): void => {
+    setMcpEditId(server.id)
+    setMcpName(server.name)
+    setMcpTransport(server.transport)
+    setMcpDesc(server.description ?? '')
+    setMcpCommand(server.command ?? '')
+    setMcpArgs((server.args ?? []).join(' '))
+    setMcpEnv(
+      Object.entries(server.env ?? {})
+        .map(([k, v]) => k + '=' + v)
+        .join('\n'),
+    )
+    setMcpUrl(server.url ?? '')
+    setMcpHeaders(
+      Object.entries(server.headers ?? {})
+        .map(([k, v]) => k + '=' + v)
+        .join('\n'),
+    )
+  }
+
+  const onSaveMcp = async (): Promise<void> => {
+    setBusy(true)
+    try {
+      const input = {
+        name: mcpName,
+        transport: mcpTransport,
+        description: mcpDesc,
+        command: mcpCommand,
+        args: parseArgs(mcpArgs),
+        env: parseKeyValue(mcpEnv),
+        url: mcpUrl,
+        headers: parseKeyValue(mcpHeaders),
+      }
+      const result =
+        mcpEditId === null
+          ? await window.closerai.addMcpServer(input)
+          : await window.closerai.updateMcpServer({ id: mcpEditId, ...input })
+      flash(result)
+      if (result.ok) {
+        resetMcpForm()
+        await loadMcp()
+      }
+    } catch (e) {
+      setError(errText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const onRemoveMcp = async (id: string): Promise<void> => {
+    setBusy(true)
+    try {
+      flash(await window.closerai.removeMcpServer(id))
+      if (mcpEditId === id) resetMcpForm()
+      await loadMcp()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const onToggleMcp = async (server: McpServer): Promise<void> => {
+    try {
+      await window.closerai.setMcpServerEnabled(server.id, !server.enabled)
+      await loadMcp()
+    } catch (e) {
+      setError(errText(e))
+    }
+  }
+
+  const onExportMcp = async (): Promise<void> => {
+    setBusy(true)
+    try {
+      const dir = await window.closerai.pickDirectory()
+      if (dir === null) return
+      const result = await window.closerai.exportMcpConfig(dir)
+      flash(result)
+      if (result.ok) setNotice('已导出 mcp.json：' + (result as { path?: string }).path)
+    } catch (e) {
+      setError(errText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const refresh = async (): Promise<void> => {
     const next = await window.closerai.getAppState()
     setState(next)
@@ -78,6 +214,7 @@ export function Manage(): React.JSX.Element {
 
   useEffect(() => {
     void refresh().catch((e) => setError(errText(e)))
+    void loadMcp().catch((e) => setError(errText(e)))
   }, [])
 
   const flash = (result: OpResult): void => {
@@ -418,6 +555,157 @@ export function Manage(): React.JSX.Element {
               保存能力设置
             </button>
           </>
+        )}
+      </section>
+
+      <section className="card">
+        <h2>MCP 服务器</h2>
+        <p className="hint">
+          管理可复用的 MCP 服务器（stdio 本地进程或 HTTP 端点），导出为标准 mcp.json 供 Claude Code
+          / Kimi Code / 编辑器等任何 MCP 兼容客户端使用。配置保存在 CloserAI 本地（不修改 DSH
+          配置）。
+        </p>
+        <div className="row-actions" style={{ marginBottom: 12 }}>
+          <button
+            disabled={busy}
+            onClick={() => {
+              resetMcpForm()
+              setMcpEditId('')
+            }}
+          >
+            ＋ 添加服务器
+          </button>
+          <button disabled={busy} onClick={() => void onExportMcp()}>
+            导出 mcp.json…
+          </button>
+        </div>
+
+        {mcpServers !== null && (
+          <ul className="list">
+            {mcpServers.length === 0 && (
+              <li>
+                <span className="meta">还没有配置 MCP 服务器。</span>
+              </li>
+            )}
+            {mcpServers.map((server) => (
+              <li key={server.id}>
+                <div className="row">
+                  <div>
+                    <strong>{server.name}</strong>
+                    <span className="meta">
+                      {server.transport === 'stdio' ? 'stdio' : 'http'}
+                      {server.transport === 'stdio'
+                        ? ' · ' + (server.command ?? '（无命令）')
+                        : ' · ' + (server.url ?? '（无 URL）')}
+                      {server.description !== undefined && ' · ' + server.description}
+                    </span>
+                  </div>
+                  <div className="row-actions">
+                    <label className="check" style={{ margin: '0 8px 0 0' }}>
+                      <input
+                        type="checkbox"
+                        checked={server.enabled}
+                        onChange={() => void onToggleMcp(server)}
+                      />
+                      启用
+                    </label>
+                    <button disabled={busy} onClick={() => startEditMcp(server)}>
+                      编辑
+                    </button>
+                    <button disabled={busy} onClick={() => void onRemoveMcp(server.id)}>
+                      删除
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {(mcpEditId !== null || mcpEditId === '' || mcpName !== '') && (
+          <div className="card-sub">
+            <h3>{mcpEditId !== null && mcpEditId !== '' ? '编辑服务器' : '添加服务器'}</h3>
+            <div className="grid">
+              <label>
+                名称
+                <input
+                  value={mcpName}
+                  onChange={(e) => setMcpName(e.target.value)}
+                  placeholder="例如：openviking / filesystem"
+                />
+              </label>
+              <label>
+                传输类型
+                <select
+                  value={mcpTransport}
+                  onChange={(e) => setMcpTransport(e.target.value as McpTransport)}
+                >
+                  <option value="stdio">stdio（本地进程）</option>
+                  <option value="http">HTTP（远程端点）</option>
+                </select>
+              </label>
+              <label>
+                描述（可选）
+                <input
+                  value={mcpDesc}
+                  onChange={(e) => setMcpDesc(e.target.value)}
+                  placeholder="这个服务器提供什么工具"
+                />
+              </label>
+            </div>
+            {mcpTransport === 'stdio' ? (
+              <div className="grid">
+                <label>
+                  命令
+                  <input
+                    value={mcpCommand}
+                    onChange={(e) => setMcpCommand(e.target.value)}
+                    placeholder="例如：npx / python / node"
+                  />
+                </label>
+                <label>
+                  参数（空格分隔）
+                  <input
+                    value={mcpArgs}
+                    onChange={(e) => setMcpArgs(e.target.value)}
+                    placeholder="例如：-y @some/mcp-server"
+                  />
+                </label>
+                <label>
+                  环境变量（每行 KEY=VALUE）
+                  <textarea value={mcpEnv} onChange={(e) => setMcpEnv(e.target.value)} rows={3} />
+                </label>
+              </div>
+            ) : (
+              <div className="grid">
+                <label>
+                  URL
+                  <input
+                    value={mcpUrl}
+                    onChange={(e) => setMcpUrl(e.target.value)}
+                    placeholder="例如：http://127.0.0.1:1933/mcp"
+                  />
+                </label>
+                <label>
+                  请求头（每行 KEY=VALUE）
+                  <textarea
+                    value={mcpHeaders}
+                    onChange={(e) => setMcpHeaders(e.target.value)}
+                    rows={3}
+                    placeholder="Authorization=Bearer xxx"
+                  />
+                </label>
+              </div>
+            )}
+            <div className="row-actions">
+              <button className="primary" disabled={busy} onClick={() => void onSaveMcp()}>
+                保存
+              </button>
+              <button disabled={busy} onClick={resetMcpForm}>
+                取消
+              </button>
+            </div>
+          </div>
         )}
       </section>
 

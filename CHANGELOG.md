@@ -22,6 +22,22 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - mac npm install OOM fix (`NODE_OPTIONS=--max-old-space-size=4096`) and Linux
   AppImage asset glob fix.
 
+## [0.7.0] - 2026-08-26
+
+### MCP 服务器管理 UI
+
+- New **MCP 服务器** card in the workspace page: list servers with enable
+  toggles, add / edit / remove stdio (command+args+env) and HTTP (url+headers)
+  servers, and **导出 mcp.json** to any folder (standard `mcpServers` map for
+  Claude Code / Kimi Code / editors / DSH plugins).
+- Config lives in CloserAI userData (`mcp-servers.json`) — works in both
+  system-sync and managed modes and never touches the user's DSH settings.
+- Backed by `McpStoreFile` (9 new tests).
+
+### Verified
+
+- `pnpm check` green (**145 tests** + SBOM gate).
+
 ## [0.6.0] - 2026-08-26
 
 ### macOS + Linux installers

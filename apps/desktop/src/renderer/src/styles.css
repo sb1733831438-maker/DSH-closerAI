@@ -258,3 +258,30 @@ select {
   white-space: pre-wrap;
   word-break: break-all;
 }
+textarea {
+  padding: 10px 12px;
+  border: 1px solid #2a2f3a;
+  border-radius: 8px;
+  background: #161a21;
+  color: #e6e8ec;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #4c8dff;
+}
+
+.card-sub {
+  border-top: 1px solid #2a2f3a;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.card-sub h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: #9aa3ad;
+}

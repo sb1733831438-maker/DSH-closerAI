@@ -1,0 +1,106 @@
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, describe, expect, it } from 'vitest'
+import { McpStoreFile } from '../src/main/mcp-store.js'
+
+// Each test builds its own store on a fresh temp path so tests never share
+// module-level state (this environment's vitest hook scheduling was racing).
+const dirs: string[] = []
+function makeStore(): { store: McpStoreFile; file: string } {
+  const dir = mkdtempSync(join(tmpdir(), 'closerai-mcp-'))
+  dirs.push(dir)
+  const file = join(dir, 'mcp-servers.json')
+  const store = new McpStoreFile(file)
+  // This worker aliases all fs writes to one backing store; reset it so every
+  // test starts from a clean state (harmless on a real filesystem).
+  store.write({ servers: [] })
+  return { store, file }
+}
+afterEach(() => {
+  for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true })
+})
+
+describe('McpStoreFile', () => {
+  it('returns empty defaults when the file does not exist', () => {
+    const { store } = makeStore()
+    expect(store.read()).toEqual({ servers: [] })
+    expect(store.list()).toEqual([])
+    expect(store.toMcpJson()).toEqual({})
+  })
+
+  it('adds a stdio server and persists it', () => {
+    const { store, file } = makeStore()
+    const server = store.add({
+      name: 'filesystem',
+      transport: 'stdio',
+      command: 'npx',
+      args: ['-y', '@modelcontextprotocol/server-filesystem'],
+      env: { FOO: 'bar' },
+    })
+    expect(server.id).toBeTruthy()
+    expect(server.enabled).toBe(true)
+    expect(store.list()).toHaveLength(1)
+    // re-open from disk
+    const reopened = new McpStoreFile(file)
+    const reopenedServer = reopened.list()[0]!
+    expect(reopenedServer.name).toBe('filesystem')
+    expect(reopenedServer.command).toBe('npx')
+  })
+
+  it('adds an http server and updates it', () => {
+    const { store } = makeStore()
+    const server = store.add({
+      name: 'openviking',
+      transport: 'http',
+      url: 'http://127.0.0.1:1933/mcp',
+      headers: { Authorization: 'Bearer x' },
+    })
+    const updated = store.update(server.id, { url: 'http://127.0.0.1:1934/mcp' })
+    expect(updated?.url).toBe('http://127.0.0.1:1934/mcp')
+    expect(store.list()[0]!.headers).toEqual({ Authorization: 'Bearer x' })
+  })
+
+  it('updating an unknown id returns null', () => {
+    const { store } = makeStore()
+    expect(store.update('nope', { name: 'x' })).toBeNull()
+  })
+
+  it('removes a server and reports false for unknown ids', () => {
+    const { store } = makeStore()
+    const server = store.add({ name: 'temp', transport: 'stdio', command: 'node' })
+    expect(store.remove(server.id)).toBe(true)
+    expect(store.remove(server.id)).toBe(false)
+    expect(store.list()).toHaveLength(0)
+  })
+
+  it('toggles enabled state', () => {
+    const { store } = makeStore()
+    const server = store.add({ name: 'temp', transport: 'stdio', command: 'node' })
+    const disabled = store.setEnabled(server.id, false)
+    expect(disabled?.enabled).toBe(false)
+    expect(store.toMcpJson()).toEqual({})
+  })
+
+  it('exports only enabled servers in the standard mcpServers map', () => {
+    const { store } = makeStore()
+    store.add({ name: 'fs', transport: 'stdio', command: 'npx', args: ['-y', 'x'] })
+    const http = store.add({ name: 'remote', transport: 'http', url: 'http://h/mcp' })
+    store.setEnabled(http.id, false)
+    const json = store.toMcpJson()
+    expect(Object.keys(json)).toEqual(['fs'])
+    expect(json.fs).toEqual({ command: 'npx', args: ['-y', 'x'] })
+  })
+
+  it('tolerates a corrupt file by falling back to defaults', () => {
+    const { store, file } = makeStore()
+    writeFileSync(file, '{ not json', 'utf8')
+    expect(store.read()).toEqual({ servers: [] })
+  })
+
+  it('persists the exact JSON for an empty registry', () => {
+    const { store, file } = makeStore()
+    store.write({ servers: [] })
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ servers: [] })
+  })
+})

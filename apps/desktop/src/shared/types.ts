@@ -152,3 +152,29 @@ export type UpdateStatus =
   | { state: 'downloading'; percent: number }
   | { state: 'downloaded'; version: string }
   | { state: 'error'; message: string }
+
+export type McpTransport = 'stdio' | 'http'
+
+/** A user-managed MCP server definition (CloserAI-side registry). */
+export interface McpServer {
+  /** Stable local id. */
+  id: string
+  /** Display name (also the key in the exported mcpServers map). */
+  name: string
+  enabled: boolean
+  transport: McpTransport
+  description?: string
+  /** stdio transport: command + optional args + env. */
+  command?: string
+  args?: string[]
+  env?: Record<string, string>
+  /** http transport: URL + optional headers. */
+  url?: string
+  headers?: Record<string, string>
+  createdAt: number
+  updatedAt: number
+}
+
+export interface McpStoreData {
+  servers: McpServer[]
+}

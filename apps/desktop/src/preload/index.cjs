@@ -33,12 +33,18 @@ const IPC = {
   launchAtLoginSet: 'app:launch-at-login:set',
   updateCheck: 'update:check',
   updateInstall: 'update:install',
+  mcpList: 'mcp:list',
+  mcpAdd: 'mcp:add',
+  mcpUpdate: 'mcp:update',
+  mcpRemove: 'mcp:remove',
+  mcpToggle: 'mcp:toggle',
+  mcpExport: 'mcp:export',
 }
 
 /** @type {import('../shared/ipc').CloserAiBridge} */
 const api = Object.freeze({
   platform: process.platform,
-  appVersion: '0.6.2',
+  appVersion: '0.7.0',
   listProviders: () => ipcRenderer.invoke(IPC.providersList),
   getActiveProvider: () => ipcRenderer.invoke(IPC.providersActive),
   getDefaults: () => ipcRenderer.invoke(IPC.providersDefaults),
@@ -62,6 +68,12 @@ const api = Object.freeze({
   pickDirectory: () => ipcRenderer.invoke(IPC.dialogPickDirectory),
   checkForUpdates: () => ipcRenderer.invoke(IPC.updateCheck),
   installUpdate: () => ipcRenderer.invoke(IPC.updateInstall),
+  listMcpServers: () => ipcRenderer.invoke(IPC.mcpList),
+  addMcpServer: (input) => ipcRenderer.invoke(IPC.mcpAdd, input),
+  updateMcpServer: (input) => ipcRenderer.invoke(IPC.mcpUpdate, input),
+  removeMcpServer: (id) => ipcRenderer.invoke(IPC.mcpRemove, id),
+  setMcpServerEnabled: (id, enabled) => ipcRenderer.invoke(IPC.mcpToggle, id, enabled),
+  exportMcpConfig: (destDir) => ipcRenderer.invoke(IPC.mcpExport, destDir),
 })
 
 contextBridge.exposeInMainWorld('closerai', api)

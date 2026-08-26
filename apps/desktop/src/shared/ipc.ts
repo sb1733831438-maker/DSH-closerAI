@@ -5,6 +5,8 @@ import type {
   ConnectivityResult,
   Diagnostics,
   CreateProjectInput,
+  McpServer,
+  McpTransport,
   OpResult,
   Project,
   ProjectStoreData,
@@ -44,6 +46,12 @@ export const IPC = {
   launchAtLoginSet: 'app:launch-at-login:set',
   updateCheck: 'update:check',
   updateInstall: 'update:install',
+  mcpList: 'mcp:list',
+  mcpAdd: 'mcp:add',
+  mcpUpdate: 'mcp:update',
+  mcpRemove: 'mcp:remove',
+  mcpToggle: 'mcp:toggle',
+  mcpExport: 'mcp:export',
 } as const
 
 export interface SaveProviderInput {
@@ -54,6 +62,21 @@ export interface SaveProviderInput {
 export interface TestProviderInput {
   profile: ProviderProfile
   apiKey?: string
+}
+
+export interface SaveMcpServerInput {
+  name: string
+  transport: McpTransport
+  description?: string
+  command?: string
+  args?: string[]
+  env?: Record<string, string>
+  url?: string
+  headers?: Record<string, string>
+}
+
+export interface UpdateMcpServerInput extends SaveMcpServerInput {
+  id: string
 }
 
 /** The allow-listed API the preload exposes to the renderer. */
@@ -89,4 +112,10 @@ export interface CloserAiBridge {
   setLaunchAtLogin(enabled: boolean): Promise<OpResult>
   checkForUpdates(): Promise<UpdateStatus>
   installUpdate(): Promise<UpdateStatus>
+  listMcpServers(): Promise<McpServer[]>
+  addMcpServer(input: SaveMcpServerInput): Promise<OpResult & { server?: McpServer }>
+  updateMcpServer(input: UpdateMcpServerInput): Promise<OpResult>
+  removeMcpServer(id: string): Promise<OpResult>
+  setMcpServerEnabled(id: string, enabled: boolean): Promise<OpResult>
+  exportMcpConfig(destDir: string): Promise<OpResult & { path?: string }>
 }
