@@ -420,7 +420,7 @@ export function Manage(): React.JSX.Element {
       <section className="card">
         <h2>权限清单</h2>
         <p className="hint">
-          当前模式「${MODE_LABEL[state.mode]}」设计授予的能力；实际启用的工具还受「能力设置」影响。
+          当前模式「{MODE_LABEL[state.mode]}」设计授予的能力；实际启用的工具还受「能力设置」影响。
         </p>
         <ul className="list">
           {state.permissions
@@ -732,7 +732,12 @@ export function Manage(): React.JSX.Element {
             </button>
             {showLogs && (
               <pre className="logview">
-                {diag.logLines.length === 0 ? '（暂无日志）' : diag.logLines.slice(-20).join('\n')}
+                {diag.logLines.length === 0
+                  ? '（暂无日志）'
+                  : diag.logLines
+                      .slice(-20)
+                      .map((l) => l.text)
+                      .join('\n')}
               </pre>
             )}
           </div>
