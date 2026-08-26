@@ -1,0 +1,28 @@
+# Keep npm dependencies fresh while staying pinned (D-012):
+# every dependency is an exact version, never `latest`, and DSH
+# (@deepseek-ai/dsh) is pinned to an exact version.
+
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: friday
+    versioning-strategy: increase-if-necessary
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: 'chore(deps)'
+      prefix-development: 'chore(deps-dev)'
+    labels:
+      - dependencies
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: friday
+    commit-message:
+      prefix: 'chore(ci)'
+    labels:
+      - dependencies

@@ -38,6 +38,12 @@ describe('sanitizeLogLine', () => {
     expect(sanitizeLogLine('DEEPSEEK_API_KEY=sk-leakme')).toBe('DEEPSEEK_API_KEY=***')
   })
 
+  it('redacts JSON-formatted secrets (quoted keys and values)', () => {
+    expect(sanitizeLogLine('{"password":"hunter2"}')).toBe('{"password":***}')
+    expect(sanitizeLogLine('{"token": "ghp_abcdefgh"}')).toBe('{"token": ***}')
+    expect(sanitizeLogLine('{"api_key": "sk-leakme"}')).toBe('{"api_key": ***}')
+  })
+
   it('leaves ordinary log text untouched', () => {
     const plain = 'DSH listening on 127.0.0.1:1234'
     expect(sanitizeLogLine(plain)).toBe(plain)

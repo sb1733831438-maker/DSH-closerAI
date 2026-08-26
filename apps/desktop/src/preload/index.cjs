@@ -44,7 +44,6 @@ const IPC = {
 /** @type {import('../shared/ipc').CloserAiBridge} */
 const api = Object.freeze({
   platform: process.platform,
-  appVersion: '0.7.0',
   listProviders: () => ipcRenderer.invoke(IPC.providersList),
   getActiveProvider: () => ipcRenderer.invoke(IPC.providersActive),
   getDefaults: () => ipcRenderer.invoke(IPC.providersDefaults),
@@ -66,6 +65,12 @@ const api = Object.freeze({
   openChat: () => ipcRenderer.invoke(IPC.navChat),
   openManage: () => ipcRenderer.invoke(IPC.navManage),
   pickDirectory: () => ipcRenderer.invoke(IPC.dialogPickDirectory),
+  getCapabilities: () => ipcRenderer.invoke(IPC.capsGet),
+  setCapabilities: (caps) => ipcRenderer.invoke(IPC.capsSet, caps),
+  getDiagnostics: () => ipcRenderer.invoke(IPC.appDiagnostics),
+  exportDiagnostics: (destDir) => ipcRenderer.invoke(IPC.appExportDiagnostics, destDir),
+  getLaunchAtLogin: () => ipcRenderer.invoke(IPC.launchAtLoginGet),
+  setLaunchAtLogin: (enabled) => ipcRenderer.invoke(IPC.launchAtLoginSet, enabled),
   checkForUpdates: () => ipcRenderer.invoke(IPC.updateCheck),
   installUpdate: () => ipcRenderer.invoke(IPC.updateInstall),
   listMcpServers: () => ipcRenderer.invoke(IPC.mcpList),

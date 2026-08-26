@@ -41,21 +41,54 @@ jobs:
           New-Item -ItemType Directory -Force -Path runtime-flat | Out-Null
           Push-Location runtime-flat
           npm init -y | Out-Null
-          npm install --no-audit --no-fund --ignore-scripts @deepseek-ai/dsh@0.1.0-rc.6
+          npm install --no-audit --no-fund --ignore-scripts `
+            @deepseek-ai/dsh@0.1.0-rc.6
           Pop-Location
 
       - name: Package Windows installer
-        env:
-          CLOSERAI_RUNTIME_NODE_MODULES: ${{ github.workspace }}\runtime-flat\node_modules
-        run: pnpm --filter @closerai/desktop run pack
+        shell: pwsh
+        run: |
+          $env:CLOSERAI_RUNTIME_NODE_MODULES = `
+            "$env:GITHUB_WORKSPACE\runtime-flat\node_modules"
+          pnpm --filter @closerai/desktop run pack
 
       - name: Verify packaged DSH runtime is complete
         shell: pwsh
         run: |
           $app = "apps\desktop\release\win-unpacked\resources\app\node_modules"
-          if (Test-Path "$app\@deepseek-ai\cordis-plugin-group") { Write-Host "cordis-plugin-group present" } else { Write-Error "cordis MISSING"; exit 1 }
-          if (Test-Path "$app\@deepseek-ai\dsh\lib\bin.js") { Write-Host "dsh bin present" }
-          if (Test-Path "$app\@closerai\mock-provider") { Write-Host "@closerai/mock-provider present" } else { Write-Error "@closerai MISSING"; exit 1 }
+          $checks = @(
+            @{
+              name = "cordis-plugin-group"
+              path = "$app\@deepseek-ai\cordis-plugin-group"
+            },
+            @{
+              name = "dsh bin"
+              path = "$app\@deepseek-ai\dsh\lib\bin.js"
+            },
+            @{
+              name = "@closerai/mock-provider"
+              path = "$app\@closerai\mock-provider"
+            }
+          )
+          foreach ($check in $checks) {
+            if (Test-Path $check.path) {
+              Write-Host "$($check.name) present"
+            } else {
+              Write-Error "$($check.name) MISSING"
+              exit 1
+            }
+          }
+
+      - name: Smoke test the unpacked app (release gate)
+        shell: pwsh
+        timeout-minutes: 10
+        run: |
+          & "apps\desktop\release\win-unpacked\CloserAI.exe" --smoke-test
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "packaged smoke failed with exit $LASTEXITCODE"
+            exit 1
+          }
+          Write-Host "packaged smoke passed (exit 0)"
 
       - name: Generate SBOM (CycloneDX)
         run: node scripts/generate-sbom.mjs --out apps/desktop/release/SBOM.json
@@ -63,8 +96,12 @@ jobs:
       - name: Compute SHA-256
         shell: pwsh
         run: |
-          $exe = Get-ChildItem "apps\desktop\release\CloserAI-*-Setup-x64.exe" | Select-Object -First 1
-          Get-FileHash -Algorithm SHA256 $exe.FullName | ForEach-Object { "$($_.Hash.ToLower())  $($exe.Name)" } | Set-Content apps\desktop\release\SHA256SUMS.txt
+          $exe = Get-ChildItem `
+            "apps\desktop\release\CloserAI-*-Setup-x64.exe" `
+            | Select-Object -First 1
+          Get-FileHash -Algorithm SHA256 $exe.FullName | ForEach-Object {
+            "$($_.Hash.ToLower())  $($exe.Name)"
+          } | Set-Content apps\desktop\release\SHA256SUMS.txt
           Get-Content apps\desktop\release\SHA256SUMS.txt
 
       - uses: actions/upload-artifact@v4
@@ -81,7 +118,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "$env:GITHUB_REF_NAME" "apps/desktop/release/CloserAI-*-Setup-x64.exe" "apps/desktop/release/SHA256SUMS.txt" "apps/desktop/release/latest.yml" "apps/desktop/release/SBOM.json" --clobber
+          gh release upload "$env:GITHUB_REF_NAME" `
+            "apps/desktop/release/CloserAI-*-Setup-x64.exe" `
+            "apps/desktop/release/SHA256SUMS.txt" `
+            "apps/desktop/release/latest.yml" `
+            "apps/desktop/release/SBOM.json" --clobber
         shell: pwsh
   cross-installer:
     name: ${{ matrix.platform }} installer
@@ -129,23 +170,45 @@ jobs:
           mkdir -p runtime-flat
           cd runtime-flat
           npm init -y >/dev/null 2>&1
-          npm install --no-audit --no-fund --ignore-scripts @deepseek-ai/dsh@0.1.0-rc.6
+          npm install --no-audit --no-fund --ignore-scripts \
+            @deepseek-ai/dsh@0.1.0-rc.6
 
       - name: Package ${{ matrix.platform }} installer
-        env:
-          CLOSERAI_RUNTIME_NODE_MODULES: ${{ github.workspace }}/runtime-flat/node_modules
-        run: pnpm --filter @closerai/desktop run ${{ matrix.script }}
-
-      - name: Verify packaged DSH runtime is complete
+        shell: bash
         run: |
-          find apps/desktop/release -path '*resources/app/node_modules/@deepseek-ai/dsh/lib' -type d | head -1
-          find apps/desktop/release -path '*resources/app/node_modules/@closerai' -type d | head -1
-          find apps/desktop/release -name '*.dmg' -o -name '*.AppImage' | head -3
+          export CLOSERAI_RUNTIME_NODE_MODULES= \
+            "$GITHUB_WORKSPACE/runtime-flat/node_modules"
+          pnpm --filter @closerai/desktop run ${{ matrix.script }}
+
+      # Fail loudly: each required packaged path must exist, else the job
+      # fails instead of silently releasing a broken artifact (R-23).
+      - name: Verify packaged DSH runtime is complete
+        shell: bash
+        run: |
+          set -euo pipefail
+          dsh_dir=$(find apps/desktop/release \
+            -path '*resources/app/node_modules/@deepseek-ai/dsh/lib' \
+            -type d | head -1)
+          if [ -z "$dsh_dir" ]; then
+            echo "dsh runtime MISSING"; exit 1
+          fi
+          closerai_dir=$(find apps/desktop/release \
+            -path '*resources/app/node_modules/@closerai' \
+            -type d | head -1)
+          if [ -z "$closerai_dir" ]; then
+            echo "@closerai packages MISSING"; exit 1
+          fi
+          echo "runtime present; artifacts:"
+          find apps/desktop/release \
+            \( -name '*.dmg' -o -name '*.AppImage' \) | head -3
 
       - name: Attach to GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "$env:GITHUB_REF_NAME" apps/desktop/release/${{ matrix.asset_glob }} apps/desktop/release/${{ matrix.update_yml }} --clobber
+          gh release upload "$env:GITHUB_REF_NAME" `
+            apps/desktop/release/${{ matrix.asset_glob }} `
+            apps/desktop/release/${{ matrix.update_yml }} `
+            --clobber
         shell: pwsh

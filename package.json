@@ -1,6 +1,6 @@
 {
   "name": "closerai",
-  "version": "0.0.1",
+  "version": "0.8.0",
   "private": true,
   "description": "CloserAI — a local-first, model-agnostic, permission-transparent desktop AI workbench built on DeepSeek Harness.",
   "license": "MIT",
@@ -17,9 +17,14 @@
     "test": "pnpm -r test",
     "build": "pnpm -r build",
     "sbom:gen": "node scripts/generate-sbom.mjs",
+    "coverage": "pnpm --filter @closerai/desktop run coverage",
+    "smoke": "pnpm --filter @closerai/desktop run smoke",
+    "commitlint": "commitlint --from HEAD~1 --to HEAD",
     "check": "pnpm format:check && pnpm lint && pnpm build && pnpm typecheck && pnpm test && pnpm sbom:gen"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@eslint/js": "10.0.1",
     "eslint": "10.8.1",
     "eslint-config-prettier": "10.1.8",

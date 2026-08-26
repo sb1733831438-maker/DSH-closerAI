@@ -1,8 +1,15 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { atomicWriteFileSync } from './fs-atomic.js'
+import type { SecretCipher } from './secrets.js'
 import type { McpServer, McpStoreData } from '../shared/types.js'
 
 const EMPTY_STORE: McpStoreData = { servers: [] }
+
+/** Values shown to the renderer instead of real MCP credentials. */
+const SECRET_MASK = '***'
+/** Prefix marking a value stored as `enc:<base64(ciphertext)>`. */
+const ENC_PREFIX = 'enc:'
 
 function randomId(): string {
   return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)
@@ -23,15 +30,66 @@ function sanitizeRecord(value: unknown): Record<string, string> {
  * managed modes and never touches the user's DSH settings. Exports the standard
  * `mcpServers` map for use by any MCP-compatible client (Claude Code, Kimi
  * Code, editors, DSH plugins).
+ *
+ * Security (REVIEW R-12): env / header VALUES are encrypted at rest with the
+ * provided cipher (safeStorage in production) as `enc:<base64>`, and the
+ * renderer-facing `list()` masks every value so secrets never reach the UI.
+ * `read()` returns the decrypted view for internal consumers (e.g. export);
+ * mutating operations always persist the encrypted form.
  */
 export class McpStoreFile {
   private readonly filePath: string
+  private readonly cipher: (() => SecretCipher) | null
 
-  constructor(filePath: string) {
+  constructor(filePath: string, cipher?: () => SecretCipher) {
     this.filePath = filePath
+    this.cipher = cipher ?? null
   }
 
-  read(): McpStoreData {
+  private encrypt(value: string): string {
+    const cipher = this.cipher
+    if (cipher === null) return value
+    try {
+      return ENC_PREFIX + cipher().encrypt(value).toString('base64')
+    } catch {
+      return value
+    }
+  }
+
+  private decrypt(value: string): string {
+    const cipher = this.cipher
+    if (cipher === null || !value.startsWith(ENC_PREFIX)) return value
+    try {
+      return cipher().decrypt(Buffer.from(value.slice(ENC_PREFIX.length), 'base64'))
+    } catch {
+      return value
+    }
+  }
+
+  private encryptRecord(record: Record<string, string>): Record<string, string> {
+    return Object.fromEntries(Object.entries(record).map(([k, v]) => [k, this.encrypt(v)]))
+  }
+
+  private decryptRecord(record: Record<string, string> | undefined): Record<string, string> {
+    if (record === undefined) return {}
+    return Object.fromEntries(Object.entries(record).map(([k, v]) => [k, this.decrypt(v)]))
+  }
+
+  private maskRecord(record: Record<string, string> | undefined): Record<string, string> {
+    if (record === undefined) return {}
+    return Object.fromEntries(Object.keys(record).map((key) => [key, SECRET_MASK]))
+  }
+
+  private maskServer(server: McpServer): McpServer {
+    return { ...server, env: this.maskRecord(server.env), headers: this.maskRecord(server.headers) }
+  }
+
+  /**
+   * Raw persistence view: exactly what is on disk (encrypted values when a
+   * cipher is configured). Mutating operations must use this so untouched
+   * servers keep their encrypted values.
+   */
+  private readRaw(): McpStoreData {
     try {
       const parsed: unknown = JSON.parse(readFileSync(this.filePath, 'utf8'))
       if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
@@ -45,13 +103,25 @@ export class McpStoreFile {
     }
   }
 
-  write(store: McpStoreData): void {
-    mkdirSync(dirname(this.filePath), { recursive: true })
-    writeFileSync(this.filePath, `${JSON.stringify(store, null, 2)}\n`, 'utf8')
+  /** Decrypted view for internal consumers (export / diagnostics). */
+  read(): McpStoreData {
+    const raw = this.readRaw()
+    return {
+      servers: raw.servers.map((server) => ({
+        ...server,
+        env: this.decryptRecord(server.env),
+        headers: this.decryptRecord(server.headers),
+      })),
+    }
   }
 
+  write(store: McpStoreData): void {
+    atomicWriteFileSync(this.filePath, `${JSON.stringify(store, null, 2)}\n`)
+  }
+
+  /** Renderer-facing view: env/header values masked, never the real secrets. */
   list(): McpServer[] {
-    return this.read().servers
+    return this.read().servers.map((server) => this.maskServer(server))
   }
 
   add(input: {
@@ -73,16 +143,16 @@ export class McpStoreFile {
       description: input.description?.trim() || undefined,
       command: input.command?.trim() || undefined,
       args: Array.isArray(input.args) ? input.args.map((a) => a.trim()).filter(Boolean) : [],
-      env: sanitizeRecord(input.env),
+      env: this.encryptRecord(sanitizeRecord(input.env)),
       url: input.url?.trim() || undefined,
-      headers: sanitizeRecord(input.headers),
+      headers: this.encryptRecord(sanitizeRecord(input.headers)),
       createdAt: now,
       updatedAt: now,
     }
-    const store = this.read()
+    const store = this.readRaw()
     store.servers.push(server)
     this.write(store)
-    return server
+    return this.maskServer(server)
   }
 
   update(
@@ -99,37 +169,48 @@ export class McpStoreFile {
       headers?: Record<string, string>
     },
   ): McpServer | null {
-    const store = this.read()
+    const store = this.readRaw()
     const index = store.servers.findIndex((server) => server.id === id)
     if (index < 0) return null
     const current = store.servers[index]!
     const next: McpServer = {
       ...current,
       createdAt: current.createdAt,
-      name: patch.name !== undefined ? patch.name.trim() || current.name : current.name,
+      name: patch.name === undefined ? current.name : patch.name.trim() || current.name,
       enabled: patch.enabled ?? current.enabled,
       transport: patch.transport ?? current.transport,
       description:
-        patch.description !== undefined
-          ? patch.description.trim() || undefined
-          : current.description,
-      command: patch.command !== undefined ? patch.command.trim() || undefined : current.command,
+        patch.description === undefined
+          ? current.description
+          : patch.description.trim() || undefined,
+      command: patch.command === undefined ? current.command : patch.command.trim() || undefined,
       args:
-        patch.args !== undefined
-          ? patch.args.map((a) => a.trim()).filter(Boolean)
-          : (current.args ?? []),
-      env: patch.env !== undefined ? sanitizeRecord(patch.env) : current.env,
-      url: patch.url !== undefined ? patch.url.trim() || undefined : current.url,
-      headers: patch.headers !== undefined ? sanitizeRecord(patch.headers) : current.headers,
+        patch.args === undefined
+          ? (current.args ?? [])
+          : patch.args.map((a) => a.trim()).filter(Boolean),
+      // A masked value from the edit form means "keep the stored secret".
+      env:
+        patch.env === undefined
+          ? current.env
+          : this.encryptRecord(
+              mergeMasked(sanitizeRecord(patch.env), this.decryptRecord(current.env)),
+            ),
+      url: patch.url === undefined ? current.url : patch.url.trim() || undefined,
+      headers:
+        patch.headers === undefined
+          ? current.headers
+          : this.encryptRecord(
+              mergeMasked(sanitizeRecord(patch.headers), this.decryptRecord(current.headers)),
+            ),
       updatedAt: Date.now(),
     }
     store.servers[index] = next
     this.write(store)
-    return next
+    return this.maskServer(next)
   }
 
   remove(id: string): boolean {
-    const store = this.read()
+    const store = this.readRaw()
     const before = store.servers.length
     store.servers = store.servers.filter((server) => server.id !== id)
     if (store.servers.length === before) return false
@@ -144,7 +225,7 @@ export class McpStoreFile {
   /** Standard `mcpServers` map (enabled servers only) for MCP-compatible clients. */
   toMcpJson(): Record<string, Record<string, unknown>> {
     const out: Record<string, Record<string, unknown>> = {}
-    for (const server of this.list()) {
+    for (const server of this.read().servers) {
       if (!server.enabled) continue
       const entry: Record<string, unknown> = {}
       if (server.transport === 'http') {
@@ -164,6 +245,18 @@ export class McpStoreFile {
   exportPath(destDir: string): string {
     return join(destDir, 'mcp.json')
   }
+}
+
+/** Apply a form patch, treating masked values as "keep the existing secret". */
+function mergeMasked(
+  patch: Record<string, string>,
+  existing: Record<string, string>,
+): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [key, value] of Object.entries(patch)) {
+    out[key] = value === SECRET_MASK ? (existing[key] ?? '') : value
+  }
+  return out
 }
 
 function isMcpServer(value: unknown): value is McpServer {

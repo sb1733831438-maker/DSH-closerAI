@@ -3,15 +3,22 @@ import type { Capabilities, DiagnosticLogLine, Diagnostics, Mode } from '../shar
 const REDACTIONS: { re: RegExp; replacement: string }[] = [
   // whole sk- API keys -> keep a recognizable prefix
   { re: /\bsk-[A-Za-z0-9_-]{8,}\b/g, replacement: 'sk-***' },
-  // Authorization: Bearer <token>
-  { re: /(Authorization\s*:\s*Bearer\s+)[A-Za-z0-9._~+/=-]+/gi, replacement: '$1***' },
-  // key=value / key: value secret fields
+  // Authorization: Bearer <token> (value optionally quoted)
   {
-    re: /((?:api[-_]?key|password|secret|token|apikey)\s*[:=]\s*)[^\s,;]+/gi,
+    re: /(Authorization\s*:\s*Bearer\s+)["']?[A-Za-z0-9._~+/=-]+/gi,
+    replacement: '$1***',
+  },
+  // key=value / key: value secret fields, keys and values optionally quoted
+  // (covers both `password: hunter2` and JSON `"password":"hunter2"`)
+  {
+    re: /(["']?(?:api[-_]?key|password|secret|token|apikey)['"]?\s*[:=]\s*)(?:"[^"]*"|'[^']*'|[^\s,;]+)/gi,
     replacement: '$1***',
   },
   // env echoes
-  { re: /(DEEPSEEK_API_KEY\s*=\s*)[^\s,;]+/g, replacement: '$1***' },
+  {
+    re: /(DEEPSEEK_API_KEY\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s,;]+)/g,
+    replacement: '$1***',
+  },
 ]
 
 export function sanitizeLogLine(text: string): string {

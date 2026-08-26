@@ -24,6 +24,12 @@ pnpm-debug.log*
 *.key
 *.p12
 *.pfx
+# npm registry auth — should never be committed (REVIEW R-30: verify no token,
+# and if one was committed, rotate it and purge it from git history)
+.npmrc
+
+# Local AI-agent scratch (pi / Claude Code etc.)
+.pi/
 
 # OS / editor
 .DS_Store

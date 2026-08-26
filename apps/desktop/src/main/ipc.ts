@@ -1,4 +1,4 @@
-import { dialog, ipcMain } from 'electron'
+import { dialog, ipcMain, app, type IpcMainInvokeEvent } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
@@ -101,15 +101,51 @@ function applyProjectToConfig(configStore: AppConfigStore, projectStore: Project
 
 export { applyProjectToConfig }
 
+/**
+ * Whether a renderer frame is allowed to invoke the privileged bridge.
+ *
+ * Only CloserAI's own pages (loaded via loadFile -> file:// index.html) may
+ * call the bridge. The DSH SPA is loaded into the same hardened window at its
+ * loopback http origin and also runs the preload, so without this check any
+ * XSS / malicious plugin content in the DSH SPA would reach the full bridge
+ * (write secrets.bin, mcp-servers.json, export files, ...). See REVIEW R-01.
+ */
+export function isTrustedSenderUrl(frameUrl: string | null | undefined): boolean {
+  return typeof frameUrl === 'string' && frameUrl.startsWith('file:')
+}
+
+export function isTrustedSender(event: IpcMainInvokeEvent): boolean {
+  try {
+    const frameUrl = event.senderFrame?.url ?? event.sender.getURL()
+    return isTrustedSenderUrl(frameUrl)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Register an IPC handler that rejects invocations from any non-app frame
+ * (e.g. the DSH SPA). Listeners keep their `_event` first parameter (ignored).
+ */
+function handleTrusted<T extends unknown[]>(
+  channel: string,
+  listener: (event: IpcMainInvokeEvent, ...args: T) => unknown,
+): void {
+  ipcMain.handle(channel, (event, ...args) => {
+    if (!isTrustedSender(event)) throw new Error('IPC sender not allowed')
+    return listener(event, ...(args as T))
+  })
+}
+
 export function registerIpcHandlers(deps: IpcDeps): void {
-  ipcMain.handle(IPC.providersList, () => deps.providerStore.read().providers)
-  ipcMain.handle(IPC.providersActive, () => deps.providerStore.getActive())
-  ipcMain.handle(IPC.providersDefaults, () => ({
+  handleTrusted(IPC.providersList, () => deps.providerStore.read().providers)
+  handleTrusted(IPC.providersActive, () => deps.providerStore.getActive())
+  handleTrusted(IPC.providersDefaults, () => ({
     deepseek: DEEPSEEK_DEFAULT,
     mock: MOCK_DEFAULT,
   }))
 
-  ipcMain.handle(IPC.providersSave, (_event, input: SaveProviderInput) => {
+  handleTrusted(IPC.providersSave, (_event, input: SaveProviderInput) => {
     const profile = normalizeProviderProfile(input.profile)
     deps.providerStore.saveProfile(profile)
     if (input.apiKey !== undefined && input.apiKey.length > 0) {
@@ -120,7 +156,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     return { ok: true }
   })
 
-  ipcMain.handle(IPC.providersTest, async (_event, input: TestProviderInput) => {
+  handleTrusted(IPC.providersTest, async (_event, input: TestProviderInput) => {
     const profile = normalizeProviderProfile(input.profile)
     return testConnectivity({
       baseUrl: profile.baseUrl,
@@ -129,14 +165,14 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     })
   })
 
-  ipcMain.handle(IPC.onboardingComplete, () => {
+  handleTrusted(IPC.onboardingComplete, () => {
     deps.onComplete()
     return { ok: true }
   })
 
-  ipcMain.handle(IPC.modeGet, () => deps.configStore.read())
+  handleTrusted(IPC.modeGet, () => deps.configStore.read())
 
-  ipcMain.handle(IPC.modeSet, (_event, config: AppConfig) => {
+  handleTrusted(IPC.modeSet, (_event, config: AppConfig) => {
     deps.configStore.write(config)
     deps.onComplete()
     return { ok: true }
@@ -144,9 +180,9 @@ export function registerIpcHandlers(deps: IpcDeps): void {
 
   // --- session history -------------------------------------------------
 
-  ipcMain.handle(IPC.sessionsList, () => deps.sessionStore.list())
+  handleTrusted(IPC.sessionsList, () => deps.sessionStore.list())
 
-  ipcMain.handle(IPC.sessionsDelete, async (_event, id: string): Promise<OpResult> => {
+  handleTrusted(IPC.sessionsDelete, async (_event, id: string): Promise<OpResult> => {
     try {
       await deps.sessionStore.delete(id)
       return ok()
@@ -167,7 +203,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     },
   )
 
-  ipcMain.handle(IPC.sessionsImport, async (_event, srcDir: string): Promise<OpResult> => {
+  handleTrusted(IPC.sessionsImport, async (_event, srcDir: string): Promise<OpResult> => {
     try {
       const path = await deps.sessionStore.importFrom(
         srcDir,
@@ -181,7 +217,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
 
   // --- projects --------------------------------------------------------
 
-  ipcMain.handle(IPC.projectsList, () => deps.projectStore.read())
+  handleTrusted(IPC.projectsList, () => deps.projectStore.read())
 
   ipcMain.handle(
     IPC.projectsCreate,
@@ -197,7 +233,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     },
   )
 
-  ipcMain.handle(IPC.projectsUpdate, (_event, project: Project): OpResult => {
+  handleTrusted(IPC.projectsUpdate, (_event, project: Project): OpResult => {
     try {
       deps.projectStore.update(project)
       applyProjectToConfig(deps.configStore, deps.projectStore)
@@ -208,7 +244,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     }
   })
 
-  ipcMain.handle(IPC.projectsDelete, (_event, id: string): OpResult => {
+  handleTrusted(IPC.projectsDelete, (_event, id: string): OpResult => {
     try {
       deps.projectStore.remove(id)
       applyProjectToConfig(deps.configStore, deps.projectStore)
@@ -219,7 +255,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     }
   })
 
-  ipcMain.handle(IPC.projectsActivate, (_event, id: string | null): OpResult => {
+  handleTrusted(IPC.projectsActivate, (_event, id: string | null): OpResult => {
     try {
       deps.projectStore.setActive(id)
       applyProjectToConfig(deps.configStore, deps.projectStore)
@@ -230,7 +266,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     }
   })
 
-  ipcMain.handle(IPC.appState, async (): Promise<AppState> => {
+  handleTrusted(IPC.appState, async (): Promise<AppState> => {
     const projects = deps.projectStore.read()
     const sessions = await deps.sessionStore.list()
     return {
@@ -245,19 +281,19 @@ export function registerIpcHandlers(deps: IpcDeps): void {
       dshMode: deps.dshMode,
     }
   })
-  ipcMain.handle(IPC.navChat, () => {
+  handleTrusted(IPC.navChat, () => {
     deps.showChat()
     return { ok: true }
   })
 
-  ipcMain.handle(IPC.navManage, () => {
+  handleTrusted(IPC.navManage, () => {
     deps.showManage()
     return { ok: true }
   })
 
-  ipcMain.handle(IPC.capsGet, (): Capabilities => deps.capabilitiesStore.read())
+  handleTrusted(IPC.capsGet, (): Capabilities => deps.capabilitiesStore.read())
 
-  ipcMain.handle(IPC.capsSet, (_event, caps: Capabilities): OpResult => {
+  handleTrusted(IPC.capsSet, (_event, caps: Capabilities): OpResult => {
     try {
       deps.capabilitiesStore.write(caps)
       deps.onComplete()
@@ -267,13 +303,15 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     }
   })
 
-  ipcMain.handle(IPC.appDiagnostics, async (): Promise<Diagnostics> => {
+  handleTrusted(IPC.appDiagnostics, async (): Promise<Diagnostics> => {
     const projects = deps.projectStore.read()
     const active = projects.projects.find((p) => p.id === projects.activeProjectId) ?? null
     const sessions = await deps.sessionStore.list()
     const status = deps.supervisorStatus()
+    // Single source of truth for the app version (R-09): Electron reads it
+    // from package.json, so it can never drift from the shipped build.
     return buildDiagnostics({
-      appVersion: '0.0.7',
+      appVersion: app.getVersion(),
       platform: process.platform,
       mode: deps.configStore.read().mode,
       activeProjectName: active?.name ?? null,
@@ -287,14 +325,14 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     })
   })
 
-  ipcMain.handle(IPC.appExportDiagnostics, async (_event, destDir: string): Promise<OpResult> => {
+  handleTrusted(IPC.appExportDiagnostics, async (_event, destDir: string): Promise<OpResult> => {
     try {
       const projects = deps.projectStore.read()
       const active = projects.projects.find((p) => p.id === projects.activeProjectId) ?? null
       const sessions = await deps.sessionStore.list()
       const status = deps.supervisorStatus()
       const diag = buildDiagnostics({
-        appVersion: '0.0.7',
+        appVersion: app.getVersion(),
         platform: process.platform,
         mode: deps.configStore.read().mode,
         activeProjectName: active?.name ?? null,
@@ -314,9 +352,9 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     }
   })
 
-  ipcMain.handle(IPC.launchAtLoginGet, (): boolean => deps.getLaunchAtLogin())
+  handleTrusted(IPC.launchAtLoginGet, (): boolean => deps.getLaunchAtLogin())
 
-  ipcMain.handle(IPC.launchAtLoginSet, (_event, enabled: boolean): OpResult => {
+  handleTrusted(IPC.launchAtLoginSet, (_event, enabled: boolean): OpResult => {
     try {
       deps.setLaunchAtLogin(enabled)
       return ok()
@@ -325,13 +363,13 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     }
   })
 
-  ipcMain.handle(IPC.updateCheck, async (): Promise<UpdateStatus> => deps.updateController.check())
+  handleTrusted(IPC.updateCheck, async (): Promise<UpdateStatus> => deps.updateController.check())
 
-  ipcMain.handle(IPC.updateInstall, async (): Promise<UpdateStatus> =>
+  handleTrusted(IPC.updateInstall, async (): Promise<UpdateStatus> =>
     deps.updateController.install(),
   )
 
-  ipcMain.handle(IPC.dialogPickDirectory, async (): Promise<string | null> => {
+  handleTrusted(IPC.dialogPickDirectory, async (): Promise<string | null> => {
     const result = await dialog.showOpenDialog({
       properties: ['openDirectory', 'createDirectory'],
     })
@@ -339,9 +377,9 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     return result.filePaths[0] ?? null
   })
 
-  ipcMain.handle(IPC.mcpList, () => deps.mcpStore.list())
+  handleTrusted(IPC.mcpList, () => deps.mcpStore.list())
 
-  ipcMain.handle(IPC.mcpAdd, (_event, input: SaveMcpServerInput) => {
+  handleTrusted(IPC.mcpAdd, (_event, input: SaveMcpServerInput) => {
     if (!input || typeof input.name !== 'string' || input.name.trim() === '') {
       return { ok: false, error: '服务器名称不能为空' }
     }
@@ -361,7 +399,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     return { ok: true, server }
   })
 
-  ipcMain.handle(IPC.mcpUpdate, (_event, input: UpdateMcpServerInput) => {
+  handleTrusted(IPC.mcpUpdate, (_event, input: UpdateMcpServerInput) => {
     const server = deps.mcpStore.update(input.id, {
       name: input.name,
       transport: input.transport,
@@ -375,12 +413,12 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     return server === null ? { ok: false, error: '未找到该 MCP 服务器' } : { ok: true }
   })
 
-  ipcMain.handle(IPC.mcpRemove, (_event, id: string) => {
+  handleTrusted(IPC.mcpRemove, (_event, id: string) => {
     const removed = deps.mcpStore.remove(id)
     return removed ? { ok: true } : { ok: false, error: '未找到该 MCP 服务器' }
   })
 
-  ipcMain.handle(IPC.mcpToggle, (_event, id: string, enabled: boolean) => {
+  handleTrusted(IPC.mcpToggle, (_event, id: string, enabled: boolean) => {
     const server = deps.mcpStore.setEnabled(id, Boolean(enabled))
     return server === null ? { ok: false, error: '未找到该 MCP 服务器' } : { ok: true }
   })

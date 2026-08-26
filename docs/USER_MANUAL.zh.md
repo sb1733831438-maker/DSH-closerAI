@@ -1,14 +1,16 @@
 # CloserAI 用户手册
 
 CloserAI 是基于 DeepSeek Harness (DSH) 运行时构建的本地优先、模型无关的桌面 AI
-工作台。本文档面向 v0.0.8 Windows 安装包。英文版见 [USER_MANUAL.md](USER_MANUAL.md)。
+工作台。本文档面向 v0.8.0 版本。英文版见 [USER_MANUAL.md](USER_MANUAL.md)。
 
 ## 安装
 
-1. 从 [v0.0.8 Release](https://github.com/sb1733831438-maker/DSH-closerAI/releases) 下载
-   `CloserAI-0.0.8-Setup-x64.exe`。
+1. 从[最新 Release](https://github.com/sb1733831438-maker/DSH-closerAI/releases)
+   下载对应平台的安装包：`CloserAI-<版本>-Setup-x64.exe`（Windows）、
+   `CloserAI-<版本>-*.dmg`（macOS）、`CloserAI-<版本>.AppImage`（Linux）。
 2. 用 `SHA256SUMS.txt` 校验 SHA-256（Windows 用 `Get-FileHash`）。
-3. 运行安装包（若出现 SmartScreen 提示：更多信息 → 仍要运行，直到应用完成代码签名）。
+3. 运行安装包。应用完成代码签名前，Windows SmartScreen 会提示「更多信息 →
+   仍要运行」；macOS 构建暂未签名（见 `docs/ROADMAP.md`）。
 
 ## 首次运行
 
@@ -33,6 +35,9 @@ CloserAI 是基于 DeepSeek Harness (DSH) 运行时构建的本地优先、模�
 - **会话**：列出、删除、导出、导入 DSH 会话。
 - **能力**：按模式开关联网搜索/抓取/技能。
 - **权限**：各模式设计能力清单。
+- **MCP 服务器**：添加 stdio 或 HTTP 的 MCP 服务器；可开关、编辑、删除，并
+  导出标准 `mcp.json`。凭据值（env / headers）使用系统钥匙串加密落盘，界面
+  中显示为掩码；编辑时若保持掩码不变，会保留原密钥，输入新值才替换。
 - **诊断与日志**：监督器实时状态 + 脱敏子进程日志；可导出用于支持。
 - **开机启动**：登录时启动 CloserAI。
 

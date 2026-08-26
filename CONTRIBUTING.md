@@ -19,9 +19,15 @@ pnpm lint           # ESLint (typescript-eslint)
 pnpm typecheck      # tsc --noEmit per package
 pnpm test           # vitest per package
 pnpm build          # compile packages
+pnpm sbom:gen       # regenerate sbom.json (CycloneDX)
+pnpm coverage       # desktop coverage gate (thresholds in vitest.config.ts)
+pnpm commitlint     # lint the last commit message (Conventional Commits)
+pnpm smoke          # real Electron e2e smoke (boots DSH, checks the UI)
 ```
 
-`pnpm check` runs all of them in order. CI runs the same gates on Linux, macOS, and Windows.
+`pnpm check` runs the core gates in order. CI runs the same gates on Linux,
+macOS, and Windows, plus a `smoke` job (xvfb) and a `coverage` gate; the
+release workflow fails unless the packaged app passes `--smoke-test`.
 
 ## Commit conventions
 
@@ -32,7 +38,13 @@ test(scope): summary
 docs(scope): summary
 build(scope): summary
 chore(scope): summary
+security(scope): summary
+ci(scope): summary
 ```
+
+Commit messages are linted in CI with commitlint (`commitlint.config.mjs`);
+rules for scope and subject casing are relaxed for this repo's style, but a
+valid type and the `type: subject` shape are required.
 
 The body explains **why**. Significant commits append metadata:
 

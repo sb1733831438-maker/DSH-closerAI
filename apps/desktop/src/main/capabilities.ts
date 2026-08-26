@@ -1,5 +1,5 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { atomicWriteFileSync } from './fs-atomic.js'
 import type { Capabilities } from '../shared/types.js'
 
 export const DEFAULT_CAPABILITIES: Capabilities = {
@@ -30,9 +30,10 @@ export class CapabilitiesStore {
       const parsed: unknown = JSON.parse(readFileSync(this.filePath, 'utf8'))
       if (isCapabilities(parsed)) return { ...parsed }
       return { ...DEFAULT_CAPABILITIES }
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { ...DEFAULT_CAPABILITIES }
-      throw error
+    } catch {
+      // Missing file, unreadable, or corrupt content all self-heal to the
+      // defaults instead of crashing the app (REVIEW R-03).
+      return { ...DEFAULT_CAPABILITIES }
     }
   }
 
@@ -42,8 +43,7 @@ export class CapabilitiesStore {
       webFetch: caps.webFetch,
       skills: caps.skills,
     }
-    mkdirSync(dirname(this.filePath), { recursive: true })
-    writeFileSync(this.filePath, JSON.stringify(safe, null, 2) + '\n', 'utf8')
+    atomicWriteFileSync(this.filePath, JSON.stringify(safe, null, 2) + '\n')
   }
 }
 

@@ -223,3 +223,56 @@ makes the desktop indistinguishable from the web DSH. A single-owner plugin
 (e.g. task-board's ledger lock) prevents a SECOND DSH on the same home, so
 system-sync requires no other DSH running on that home — documented in
 TROUBLESHOOTING.
+
+## D-022 �� MCP servers mount into the running DSH via the profile patch
+
+**Decision:** Enabled MCP servers are mounted into the running DSH (managed
+mode) by writing one `@deepseek-ai/dsh-mcp-client` plugin row per server into
+the `headless` profile's `cordis.patch.yml` (the profile patch layer DSH
+merges over its bundle stack), before the DSH child starts. System-sync mode
+never writes the user's home.
+
+**Why:** DSH 0.1.0-rc.6 exposes no settings.yaml MCP key; its MCP surface is the
+cordis plugin `dsh-mcp-client` (peer of dsh, resolvable inside the profile
+node_modules), which registers tools as `mcp__<server>__<tool>` on `ctx.tools`.
+Verified empirically: DSH does not clobber a pre-written patch, boots the
+plugin, and spawns the MCP server (E2E test). This is the non-forking way to
+give the model MCP tools.
+
+## D-023 �� MCP credentials are injected via the child environment, never written to the patch
+
+**Decision:** MCP env/header values never land in `cordis.patch.yml`; each value
+is injected as a `CLOSERAI_MCP_<SERVER>_<KEY>` environment variable on the DSH
+child, and the patch references it with `!!js process.env.<VAR>` (the global
+tag DSH's own bundles use for secrets).
+
+**Why:** Writing decrypted credentials into the profile patch would violate
+D-011 (no plaintext credentials at rest). Environment injection matches the
+existing `DEEPSEEK_API_KEY` seam and keeps the patch free of secrets.
+
+## D-024 �� IPC bridge answers only the app's own file:// frames
+
+**Decision:** Every `ipcMain.handle` goes through a sender check: the invoking
+frame's URL must start with `file:` (the app's own renderer entry). The DSH SPA
+shares the same hardened window and also runs the preload, so without this any
+XSS in DSH content would reach the full bridge.
+
+**Why:** Defense in depth over the D-009 CSP (which must allow inline/eval for
+the SPA). A contract test pins the channel set and bridge methods.
+
+## D-025 �� Stores are atomic + corruption-tolerant
+
+**Decision:** All app stores write via temp-write + rename (atomic) and treat
+corrupt/unreadable files as empty defaults instead of crashing.
+
+**Why:** A crash mid-write used to leave a truncated JSON that bricked the app
+at startup; self-healing to defaults keeps the app usable and the next write
+repairs the file.
+
+## D-026 �� Backend restarts are serialized (single-flight)
+
+**Decision:** `startBackendForActiveProfile` runs on a promise chain so
+concurrent mode/project changes queue instead of racing stop against launch.
+
+**Why:** Rapid switches previously could spawn two DSH instances on the same
+home (port conflicts, orphaned processes).

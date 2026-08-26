@@ -119,4 +119,44 @@ describe('DshSupervisor', () => {
     await waitFor(() => unhealthy.length > 0 && supervisor.getState() === 'ready', 8000)
     expect(unhealthy.length).toBeGreaterThan(0)
   }, 15000)
+
+  it('R-27: start() during an in-flight stop() waits instead of spawning a second child', async () => {
+    const supervisor = makeSupervisor()
+    await supervisor.start()
+
+    const stopPromise = supervisor.stop()
+    // start() must await the pending stop (releasing the port) rather than
+    // spawning a second child that would race the shutting-down one.
+    const startPromise = supervisor.start()
+    const status = await startPromise
+    await stopPromise
+
+    expect(status.state).toBe('ready')
+    expect(supervisor.getState()).toBe('ready')
+    expect(supervisor.getPid()).not.toBeNull()
+    await supervisor.stop()
+  }, 15000)
+
+  it('R-27: start() during a pending auto-restart does not double-spawn', async () => {
+    // The env object is passed to every spawn by reference; neutralize the
+    // crash switch before re-starting so only the FIRST child crashes.
+    const env: Record<string, string> = { FAKE_DSH_CRASH_AFTER_MS: '100' }
+    const supervisor = makeSupervisor({ env, restartBackoffMs: 300, maxRestarts: 5 })
+    await supervisor.start()
+    // crash -> restart timer scheduled -> state 'unhealthy'
+    await waitForState(supervisor, 'unhealthy', 8000)
+    env.FAKE_DSH_CRASH_AFTER_MS = '0'
+
+    const readyEvents: string[] = []
+    supervisor.on('ready', (s) => readyEvents.push(s.url ?? ''))
+    await supervisor.start()
+    await waitFor(() => supervisor.getState() === 'ready', 8000)
+    // The cancelled timer (first crash + backoff = 400ms) would have fired
+    // within this window if start() had not cleared it; the re-started child
+    // no longer crashes, so a second ready event means a double-spawn.
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    expect(readyEvents).toHaveLength(1)
+    expect(supervisor.getState()).toBe('ready')
+    await supervisor.stop()
+  }, 15000)
 })

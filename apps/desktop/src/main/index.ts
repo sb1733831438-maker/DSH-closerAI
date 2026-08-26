@@ -11,7 +11,7 @@ import { MOCK_DEFAULT } from './providers.js'
 import { ProviderStoreFile } from './provider-store.js'
 import { ProjectStore } from './project-store.js'
 import { createSafeStorageCipher } from './safe-storage-cipher.js'
-import { SecretStore } from './secrets.js'
+import { SecretStore, type SecretCipher } from './secrets.js'
 import { SessionStore } from './session-store.js'
 import { clearStaleTaskBoardLock, describeDshStartFailure, resolveDshHome } from './dsh-home.js'
 import { McpStoreFile } from './mcp-store.js'
@@ -42,7 +42,9 @@ function main(): void {
 
   const userData = app.getPath('userData')
   const providerStore = new ProviderStoreFile(join(userData, 'providers.json'))
-  const mcpStore = new McpStoreFile(join(userData, 'mcp-servers.json'))
+  // safeStorage requires the app to be ready; resolve the cipher lazily.
+  const getCipher = (): SecretCipher => createSafeStorageCipher()
+  const mcpStore = new McpStoreFile(join(userData, 'mcp-servers.json'), getCipher)
   const configStore = new AppConfigStore(join(userData, 'app-config.json'))
   const projectStore = new ProjectStore(join(userData, 'projects.json'))
   const capabilitiesStore = new CapabilitiesStore(join(userData, 'capabilities.json'))
@@ -50,8 +52,15 @@ function main(): void {
     ? { home: join(app.getPath('temp'), 'closerai-smoke-' + process.pid), mode: 'managed' as const }
     : resolveDshHome(userData)
   const updateController = createUpdateController({
+    // SAFETY: Electron autoUpdater and the update.ts UpdaterLike interface both
+    // expose checkForUpdates()/downloadUpdate()/quitAndInstall() with compatible
+    // shapes; autoUpdater is always non-null in the main process, so the cast is
+    // safe and the smoke tests exercise the real autoUpdater path.
     updater: autoUpdater as unknown as UpdaterLike,
     isPackaged: () => app.isPackaged,
+    // Stop the DSH child before the updater quits the app (R-28); stopBackend
+    // is declared below, so reference it lazily to avoid the TDZ.
+    beforeQuitAndInstall: () => stopBackend(),
   })
   const dshHome = resolvedHome.home
   const dshMode = resolvedHome.mode
@@ -61,7 +70,7 @@ function main(): void {
   const getSecretStore = (): SecretStore => {
     // safeStorage requires the app to be ready; construct on first use.
     if (secretStore === null) {
-      secretStore = new SecretStore(join(userData, 'secrets.bin'), createSafeStorageCipher())
+      secretStore = new SecretStore(join(userData, 'secrets.bin'), getCipher())
     }
     return secretStore
   }
@@ -80,7 +89,9 @@ function main(): void {
 
   const ensureWindow = (): BrowserWindow => {
     if (window === null || window.isDestroyed()) {
-      window = createWindow({ kind: 'file', path: onboardingPath })
+      window = createWindow({ kind: 'file', path: onboardingPath }, () =>
+        backend === null ? null : backend.dsh.url,
+      )
     }
     return window
   }
@@ -94,7 +105,14 @@ function main(): void {
   const showChat = (): void => {
     const win = ensureWindow()
     focusWindow()
-    if (backend !== null) void win.loadURL(backend.dsh.url)
+    if (backend !== null) {
+      void win.loadURL(backend.dsh.url)
+    } else {
+      // Deep link / menu arrived before (or without) a running backend (R-29):
+      // show the app's own page instead of silently doing nothing. The boot
+      // flow (or onboarding) drives the backend from there.
+      showOnboarding()
+    }
   }
 
   const handleDeepLink = (link: string): void => {
@@ -108,7 +126,8 @@ function main(): void {
   const setTarget = (
     target: { kind: 'url'; url: string } | { kind: 'file'; path: string },
   ): void => {
-    if (window === null || window.isDestroyed()) window = createWindow(target)
+    if (window === null || window.isDestroyed())
+      window = createWindow(target, () => (backend === null ? null : backend.dsh.url))
     else if (target.kind === 'url') void window.loadURL(target.url)
     else void window.loadFile(target.path)
   }
@@ -125,7 +144,12 @@ function main(): void {
     setTarget({ kind: 'file', path: onboardingPath })
   }
 
-  const startBackendForActiveProfile = async (): Promise<void> => {
+  // Serialize backend (re)starts: every mode change / project activation /
+  // onboarding-complete triggers one, and concurrent calls must never spawn
+  // two DSH instances or race stopBackend() against launchBackend() (R-02).
+  let restartChain: Promise<void> | null = null
+
+  const doStartBackend = async (): Promise<void> => {
     await stopBackend()
     let running: RunningBackend | null = null
     if (dshMode === 'system-sync') {
@@ -191,6 +215,7 @@ function main(): void {
         mode,
         workspaceDir: workspaceDirFor(),
         capabilities: capabilitiesStore.read(),
+        mcpServers: mcpStore.read().servers,
       })
     }
     if (running === null) return
@@ -275,6 +300,14 @@ function main(): void {
         app.exit(1)
       })
     }
+  }
+
+  const startBackendForActiveProfile = (): Promise<void> => {
+    const next = (restartChain ?? Promise.resolve())
+      .catch(() => undefined)
+      .then(() => doStartBackend())
+    restartChain = next
+    return next
   }
 
   const installMenu = (): void => {
@@ -437,7 +470,19 @@ function main(): void {
     void stopBackend().finally(() => app.quit())
   })
 
-  void app.whenReady().then(boot)
+  void app
+    .whenReady()
+    .then(boot)
+    .catch((error) => {
+      // Never leave an unhandled rejection from boot(): surface it and exit
+      // with a code instead of silently hanging (REVIEW R-03).
+      console.error(
+        '[closerai] boot crashed:',
+        error instanceof Error ? (error.stack ?? error.message) : error,
+      )
+      notify('CloserAI — 启动失败', '出现未预期的启动错误，应用将退出。请查看诊断信息后重试。')
+      app.exit(1)
+    })
 }
 
 if (!app.requestSingleInstanceLock()) {

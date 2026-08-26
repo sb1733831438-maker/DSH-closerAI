@@ -8,13 +8,18 @@ export interface UpdaterLike {
   checkForUpdates(): Promise<unknown>
   downloadUpdate?(updateInfo?: unknown): Promise<unknown>
   quitAndInstall(): void
-  on(event: string, listener: (...args: unknown[]) => void): unknown
+  on(event: string, listener: (...args: unknown[]) => void): void
 }
 
 export interface UpdateControllerDeps {
   updater: UpdaterLike
   /** Only packaged builds can self-update; dev/smoke report disabled. */
   isPackaged: () => boolean
+  /**
+   * Hook run just before quitAndInstall() so the caller can stop the DSH
+   * child and flush its state before the updater quits the app (R-28).
+   */
+  beforeQuitAndInstall?: () => Promise<void> | void
 }
 
 export interface UpdateController {
@@ -60,6 +65,15 @@ export function createUpdateController(deps: UpdateControllerDeps): UpdateContro
     status: () => status,
     async check() {
       if (status.state === 'disabled') return status
+      // Never clobber an in-flight or completed download: a manual "检查更新"
+      // click must not hide the "重启并安装" button (R-26).
+      if (
+        status.state === 'checking' ||
+        status.state === 'downloading' ||
+        status.state === 'downloaded'
+      ) {
+        return status
+      }
       status = { state: 'checking' }
       try {
         await updater.checkForUpdates()
@@ -73,6 +87,9 @@ export function createUpdateController(deps: UpdateControllerDeps): UpdateContro
     },
     async install() {
       if (status.state === 'downloaded') {
+        // Stop the DSH child first so the updater's quit does not race a live
+        // backend (R-28); the user's session files are flushed before quitting.
+        await deps.beforeQuitAndInstall?.()
         updater.quitAndInstall()
         return { state: 'downloaded', version: status.version }
       }

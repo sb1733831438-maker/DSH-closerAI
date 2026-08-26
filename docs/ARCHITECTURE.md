@@ -69,16 +69,17 @@ Each mode is a DSH agent preset derived from the same host composition:
 | Work        | none  | app-private sandbox     | document processing, preview, export |
 | Code/Cowork | yes   | user-approved directory | files, git, terminal, LSP, approvals |
 
-See [`packages/profiles/`](../packages/profiles/) once v0.0.4 lands.
+The per-mode agent presets (tool sets, sandbox policy, prompt sections) ship in
+[`apps/desktop/presets/`](../apps/desktop/presets/) (chat / work / code). They are
+installed into the DSH home at backend launch by `installPresets`.
 
 ## Packages
 
 | Package                   | Purpose                                       | Milestone |
 | ------------------------- | --------------------------------------------- | --------- |
 | `@closerai/mock-provider` | Deterministic OpenAI-compatible mock provider | v0.0.1    |
-| `@closerai/supervisor`    | DSH child-process supervisor                  | v0.0.2    |
-| `@closerai/profiles`      | Chat / Work / Code agent presets              | v0.0.4    |
-| `apps/desktop`            | Electron application                          | v0.0.2    |
+| `@closerai/supervisor`    | DSH child-process supervisor                  | v0.0.1    |
+| `apps/desktop`            | Electron application                          | v0.7.0    |
 
 ## Data and secrets
 

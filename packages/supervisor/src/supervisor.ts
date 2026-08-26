@@ -98,10 +98,18 @@ export class DshSupervisor extends EventEmitter {
   }
 
   /** Start (or restart from a stopped/failed state) the child and await readiness. */
-  start(): Promise<SupervisorStatus> {
-    if (this.state === 'ready') return Promise.resolve(this.status)
+  async start(): Promise<SupervisorStatus> {
+    if (this.state === 'ready') return this.status
+    if (this.startPromise !== null) return this.startPromise
+    // Wait for an in-flight stop() to fully finish so the port is released and
+    // no second child spawns while the old one is still shutting down (R-27).
+    if (this.stopPromise !== null) await this.stopPromise
+    if (this.getState() === 'ready') return this.status
     if (this.startPromise !== null) return this.startPromise
 
+    // A pending auto-restart timer must not double-spawn: start() replaces the
+    // child immediately, so cancel the scheduled restart (R-27).
+    this.clearRestartTimer()
     this.restartCount = 0
     this.startPromise = new Promise<SupervisorStatus>((resolve, reject) => {
       this.pendingStart = { resolve, reject }
@@ -153,6 +161,7 @@ export class DshSupervisor extends EventEmitter {
   }
 
   private spawnChild(): void {
+    this.clearRestartTimer()
     this.runId += 1
     const runId = this.runId
     this.stopping = false
@@ -220,6 +229,10 @@ export class DshSupervisor extends EventEmitter {
     this.url = url
     this.port = endpoint.port
     this.consecutiveFailures = 0
+    if (this.startupTimer !== null) {
+      clearTimeout(this.startupTimer)
+      this.startupTimer = null
+    }
     this.setState('ready')
     this.startHealthMonitor()
     this.scheduleRestartReset(runId)
@@ -334,6 +347,7 @@ export class DshSupervisor extends EventEmitter {
     this.setState('stopped')
     this.stopResolve?.()
     this.stopResolve = null
+    this.stopPromise = null
   }
 
   private settleStart(error: Error | null): void {
