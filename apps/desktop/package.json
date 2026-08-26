@@ -37,7 +37,7 @@
     "@vitejs/plugin-react": "5.1.1",
     "@vitest/coverage-v8": "^3.2.7",
     "electron": "43.4.0",
-    "electron-builder": "25.1.8",
+    "electron-builder": "26.15.3",
     "jsdom": "^26.1.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
