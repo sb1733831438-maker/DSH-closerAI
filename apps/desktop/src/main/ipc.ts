@@ -1,4 +1,4 @@
-import { dialog, ipcMain, type IpcMainInvokeEvent } from 'electron'
+import { dialog, ipcMain, app, type IpcMainInvokeEvent } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
@@ -308,8 +308,10 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     const active = projects.projects.find((p) => p.id === projects.activeProjectId) ?? null
     const sessions = await deps.sessionStore.list()
     const status = deps.supervisorStatus()
+    // Single source of truth for the app version (R-09): Electron reads it
+    // from package.json, so it can never drift from the shipped build.
     return buildDiagnostics({
-      appVersion: '0.0.7',
+      appVersion: app.getVersion(),
       platform: process.platform,
       mode: deps.configStore.read().mode,
       activeProjectName: active?.name ?? null,
@@ -330,7 +332,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
       const sessions = await deps.sessionStore.list()
       const status = deps.supervisorStatus()
       const diag = buildDiagnostics({
-        appVersion: '0.0.7',
+        appVersion: app.getVersion(),
         platform: process.platform,
         mode: deps.configStore.read().mode,
         activeProjectName: active?.name ?? null,

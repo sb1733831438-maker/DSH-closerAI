@@ -82,7 +82,6 @@ export interface UpdateMcpServerInput extends SaveMcpServerInput {
 /** The allow-listed API the preload exposes to the renderer. */
 export interface CloserAiBridge {
   platform: string
-  appVersion: string
   listProviders(): Promise<ProviderProfile[]>
   getActiveProvider(): Promise<ProviderProfile | null>
   getDefaults(): Promise<{ deepseek: ProviderProfile; mock: ProviderProfile }>

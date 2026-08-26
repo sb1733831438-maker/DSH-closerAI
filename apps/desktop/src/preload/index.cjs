@@ -44,7 +44,6 @@ const IPC = {
 /** @type {import('../shared/ipc').CloserAiBridge} */
 const api = Object.freeze({
   platform: process.platform,
-  appVersion: '0.7.0',
   listProviders: () => ipcRenderer.invoke(IPC.providersList),
   getActiveProvider: () => ipcRenderer.invoke(IPC.providersActive),
   getDefaults: () => ipcRenderer.invoke(IPC.providersDefaults),

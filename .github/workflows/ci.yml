@@ -45,3 +45,63 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Generate SBOM (CycloneDX)
+        run: node scripts/generate-sbom.mjs
+
+      - name: Assert SBOM is fresh
+        run: |
+          git diff --quiet -- sbom.json || {
+            echo "sbom.json is stale - run \"pnpm sbom:gen\" and commit it";
+            exit 1;
+          }
+
+  coverage:
+    name: coverage (desktop)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.21.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Coverage gate (thresholds in vitest.config.ts)
+        run: pnpm --filter @closerai/desktop run coverage
+
+  smoke:
+    name: smoke (electron e2e)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.21.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace deps + desktop
+        run: pnpm -r build
+
+      - name: Install xvfb (headless display)
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      # Real end-to-end: boots a DSH child, loads the SPA, checks the manage
+      # page content over IPC, exits 0 on success (R-05).
+      - name: Run packaged-style smoke test
+        run: xvfb-run -a pnpm --filter @closerai/desktop run smoke

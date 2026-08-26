@@ -71,7 +71,7 @@ describe('preload bridge contract', () => {
   it('does not expose bridge methods beyond the declared interface', () => {
     const source = readPreloadSource()
     const apiKeys = extractObjectKeys(source, 'api')
-    const declared = new Set([...BRIDGE_METHODS, 'platform', 'appVersion'])
+    const declared = new Set([...BRIDGE_METHODS, 'platform'])
     const extras = apiKeys.filter((key) => !declared.has(key))
     expect(extras).toEqual([])
   })
