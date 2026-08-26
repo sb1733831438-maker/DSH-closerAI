@@ -23,7 +23,7 @@
     "check": "pnpm format:check && pnpm lint && pnpm build && pnpm typecheck && pnpm test && pnpm sbom:gen"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.8.1",
+    "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/js": "10.0.1",
     "eslint": "10.8.1",
