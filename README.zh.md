@@ -31,13 +31,16 @@ DSH 作为 Agent 运行时的同时，新增了桌面监督器（Supervisor）�
 - **官方 DeepSeek 虎鲸图标** —— 应用、安装包与任务栏使用官方 DeepSeek 鲸鱼 logo。
 - **同步体验** —— 工作区页显示「已与系统 DSH 同步」横幅；共享目录被另一个 DSH 锁定时给出友好提示而非静默崩溃。
 - **自动更新** —— 内置更新器（electron-updater + GitHub Releases），可在工作区页检查更新。
+- **跨平台安装包** —— Windows（NSIS）、macOS（dmg，arm64）、Linux（AppImage）由 CI 构建，带各自平台的自动更新元数据。
+- **供应链透明** —— 每个 Release 附带 CycloneDX SBOM（973 组件，`pnpm check` 中有许可门禁）。
+- **MCP 服务器管理** —— 在工作区页管理可复用的 MCP 服务器（stdio / HTTP），导出标准 `mcp.json` 给 Claude Code、Kimi Code、编辑器或任何 MCP 兼容客户端。
 
 ## 🚀 快速开始
 
 **方式 A —— 安装 Windows 版（推荐）**
 
-1. 下载 [CloserAI-0.4.1-Setup-x64.exe](https://github.com/sb1733831438-maker/DSH-closerAI/releases/latest)。
-2. 用 `SHA256SUMS.txt` 校验 SHA-256（Windows：`Get-FileHash -Algorithm SHA256 .\CloserAI-0.4.1-Setup-x64.exe`）。
+1. 下载最新安装包：**Windows** `CloserAI-0.7.0-Setup-x64.exe`、**macOS** `CloserAI-0.7.0-arm64.dmg`、或 **Linux** `CloserAI-0.7.0.AppImage`——都在 [Releases](https://github.com/sb1733831438-maker/DSH-closerAI/releases/latest) 页。
+2. 用 `SHA256SUMS.txt` 校验 SHA-256（Windows：`Get-FileHash -Algorithm SHA256 .\CloserAI-0.7.0-Setup-x64.exe`）。
 3. 运行安装包，启动后选择 **Mock 模式** 即可零配置体验。
 
 > 安装包尚未代码签名——若 SmartScreen 提示，请选择「更多信息 → 仍要运行」，并以校验和为准。
@@ -75,7 +78,7 @@ cd apps/desktop
 pnpm run pack     # 构建 Windows 安装包（release/CloserAI-*-Setup-x64.exe）
 ```
 
-新增功能必须保持 `pnpm check` 全绿（136 项测试）与 `pnpm smoke` 通过。扩展模式/预设请参考
+新增功能必须保持 `pnpm check` 全绿（145 项测试）与 `pnpm smoke` 通过。扩展模式/预设请参考
 [docs/PLUGIN_DEV.md](docs/PLUGIN_DEV.md)。
 
 ## 📚 文档
@@ -103,6 +106,9 @@ pnpm run pack     # 构建 Windows 安装包（release/CloserAI-*-Setup-x64.exe�
 | v0.2.1     | 官方 DeepSeek 虎鲸应用图标                                 | 已发布     |
 | v0.3.0     | 同步体验：工作区横幅 + 并发 DSH 友好处理                   | 已发布     |
 | **v0.4.1** | **自动更新（electron-updater）+ 陈旧锁自愈**               | **已发布** |
+| v0.5.0     | SBOM（CycloneDX）+ CI 许可门禁                             | 已发布     |
+| v0.6.2     | macOS/Linux 安装包 + 黑鲸鱼托盘图标                        | 已发布     |
+| **v0.7.0** | **MCP 服务器管理 UI + 标准 mcp.json 导出**                 | **已发布** |
 
 ## 📄 许可证
 

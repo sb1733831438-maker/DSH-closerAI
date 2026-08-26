@@ -31,13 +31,16 @@ OS-keychain secrets, and a plugin security model.
 - **Official DeepSeek orca icon** — the app, installer and taskbar use the official DeepSeek whale logo.
 - **Sync experience** — a “已与系统 DSH 同步” banner in the workspace page, and a friendly hint when the shared home is locked by another DSH instead of a silent crash.
 - **Auto-update** — built-in updater (electron-updater + GitHub Releases); check for updates from the workspace page.
+- **Cross-platform installers** — Windows (NSIS), macOS (dmg, arm64), and Linux (AppImage) built in CI with per-platform auto-update metadata.
+- **Supply-chain transparency** — a CycloneDX SBOM (973 components, license-gated in `pnpm check`) is generated and shipped with every release.
+- **MCP server management** — manage reusable MCP servers (stdio / HTTP) from the workspace page and export a standard `mcp.json` for Claude Code, Kimi Code, editors, or any MCP-compatible client.
 
 ## 🚀 Quick start
 
 **Option A — install the Windows build (recommended)**
 
-1. Download [CloserAI-0.4.1-Setup-x64.exe](https://github.com/sb1733831438-maker/DSH-closerAI/releases/latest).
-2. Verify the SHA-256 against `SHA256SUMS.txt` (Windows: `Get-FileHash -Algorithm SHA256 .\CloserAI-0.4.1-Setup-x64.exe`).
+1. Download the latest installer: **Windows** `CloserAI-0.7.0-Setup-x64.exe`, **macOS** `CloserAI-0.7.0-arm64.dmg`, or **Linux** `CloserAI-0.7.0.AppImage` — all on the [Releases](https://github.com/sb1733831438-maker/DSH-closerAI/releases/latest) page.
+2. Verify the SHA-256 against `SHA256SUMS.txt` (Windows: `Get-FileHash -Algorithm SHA256 .\CloserAI-0.7.0-Setup-x64.exe`).
 3. Run the installer, then launch CloserAI and pick **Mock mode** to try it with zero configuration.
 
 > The installer is not code-signed yet — if SmartScreen warns, choose _More info → Run anyway_,
@@ -75,7 +78,7 @@ cd apps/desktop
 pnpm run pack     # build the Windows installer (release/CloserAI-*-Setup-x64.exe)
 ```
 
-New features must keep `pnpm check` green (136 tests) and `pnpm smoke` passing. See
+New features must keep `pnpm check` green (145 tests) and `pnpm smoke` passing. See
 [docs/PLUGIN_DEV.md](docs/PLUGIN_DEV.md) for extending modes/presets.
 
 ## 📚 Documentation
@@ -103,6 +106,9 @@ New features must keep `pnpm check` green (136 tests) and `pnpm smoke` passing. 
 | v0.2.1     | Official DeepSeek orca app icon                                           | Released     |
 | v0.3.0     | Sync experience: workspace banner + friendly concurrent-DSH handling      | Released     |
 | **v0.4.1** | **Auto-update (electron-updater) + stale-lock self-heal**                 | **Released** |
+| v0.5.0     | SBOM (CycloneDX) + license gate in CI                                     | Released     |
+| v0.6.2     | macOS/Linux installers + black-orca tray icon                             | Released     |
+| **v0.7.0** | **MCP server management UI + standard mcp.json export**                   | **Released** |
 
 ## 📄 License
 
