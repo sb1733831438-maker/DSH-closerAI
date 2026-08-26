@@ -2,6 +2,19 @@
 
 > Last updated: 2026-08-26 — v0.7.0 (MCP server management UI).
 
+## Review baseline (2026-08-26)
+
+- Added the long-term open-source review baseline: `docs/REVIEW_2026-08-26.md` (full audit,
+  0×P0 / 7×P1 / ~16×P2 / ~10×P3, incl. two **verified shipped P1 defects**: R-33 preload bridge
+  missing 6 methods breaking manage-page diagnostics/capabilities/launch-at-login, and R-34 MCP
+  “add server” always failing), `docs/BENCHMARK.md` (peer comparison: Jan / Cherry Studio /
+  AnythingLLM / Chatbox / Open WebUI / LobeChat / DeepSeek Harness / LM Studio / Cline / Roo),
+  and `docs/ROADMAP.md` (v0.8.x / v0.9.x / v1.0 / long-term tracks). Raw role-pass reports in
+  `docs/review/`.
+- Verified baseline: `pnpm check` green (145 tests), SBOM 973 components; `sbom.json` regenerated
+  to component version 0.7.0 (was stale 0.6.2). Docs-only change; no source edits this pass.
+  P1 fixes (incl. R-33/R-34) scheduled for v0.8.x per ROADMAP.
+
 ## Current milestone
 
 **v0.7.0 — MCP server management UI.** The workspace page gains a **MCP 服务器**
