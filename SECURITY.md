@@ -47,7 +47,7 @@ The full architecture is described in
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Key guarantees:
 
 - **Electron renderer hardening**: `contextIsolation: true`, `nodeIntegration:
-  false`, `sandbox: true`, strict CSP on every response, navigation locked to
+false`, `sandbox: true`, strict CSP on every response, navigation locked to
   the live DSH loopback origin, new windows denied, every permission request
   denied.
 - **IPC sender validation (R-01)**: the preload bridge only answers invocations

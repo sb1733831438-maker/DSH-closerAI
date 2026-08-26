@@ -6,7 +6,6 @@
 // can assert the server was actually spawned by DSH.
 import { createInterface } from 'node:readline'
 
-const serverName = 'test-server'
 const marker = '[mcp-fixture] server ready'
 
 // Announce readiness on stderr (DSH captures child stderr into its logs).
@@ -24,9 +23,7 @@ const TOOLS = [
   },
 ]
 
-let initialized = false
 const rl = createInterface({ input: process.stdin, crlfDelay: Infinity })
-
 function send(payload) {
   process.stdout.write(JSON.stringify(payload) + '\n')
 }
@@ -39,7 +36,6 @@ rl.on('line', (line) => {
     return
   }
   if (req.method === 'initialize') {
-    initialized = true
     send({
       jsonrpc: '2.0',
       id: req.id,
@@ -68,7 +64,11 @@ rl.on('line', (line) => {
       })
       return
     }
-    send({ jsonrpc: '2.0', id: req.id, result: { content: [{ type: 'text', text: 'unknown tool' }] } })
+    send({
+      jsonrpc: '2.0',
+      id: req.id,
+      result: { content: [{ type: 'text', text: 'unknown tool' }] },
+    })
     return
   }
   // Unknown method: respond with a parse error so DSH does not hang.

@@ -27,7 +27,7 @@ function extractObjectKeys(source: string, decl: string): string[] {
   // then read the object literal body up to its matching closing brace.
   const declStart = source.indexOf(`const ${decl} =`)
   if (declStart === -1) throw new Error(`could not find "const ${decl}" in preload source`)
-  let open = source.indexOf('{', declStart)
+  const open = source.indexOf('{', declStart)
   if (open === -1) throw new Error(`could not find "{" for const ${decl}`)
   let depth = 0
   let close = -1

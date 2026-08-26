@@ -1,13 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Manage } from '../src/renderer/src/Manage'
-import type {
-  AppState,
-  Capabilities,
-  Diagnostics,
-  McpServer,
-  OpResult,
-} from '../src/shared/types'
+import type { AppState, Capabilities, Diagnostics, McpServer, OpResult } from '../src/shared/types'
 
 /**
  * Renderer component tests for the CloserAI management page (Manage.tsx).

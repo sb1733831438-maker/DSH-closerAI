@@ -114,12 +114,7 @@ describe('writeDshMcpPlugins', () => {
     mkdirSync(dirname(patchPath), { recursive: true })
     writeFileSync(
       patchPath,
-      [
-        '- insert:',
-        '    - id: my-plugin',
-        "      name: 'some-other-plugin'",
-        '',
-      ].join('\n'),
+      ['- insert:', '    - id: my-plugin', "      name: 'some-other-plugin'", ''].join('\n'),
       'utf8',
     )
     writeDshMcpPlugins(home, [stdioServer()])
@@ -154,9 +149,7 @@ describe('writeDshMcpPlugins', () => {
   })
 
   it('mcpEnvVarName is deterministic and env-safe', () => {
-    expect(mcpEnvVarName('My Server', 'x-api-key')).toBe(
-      'CLOSERAI_MCP_MY_SERVER_X_API_KEY',
-    )
+    expect(mcpEnvVarName('My Server', 'x-api-key')).toBe('CLOSERAI_MCP_MY_SERVER_X_API_KEY')
   })
 })
 
@@ -164,8 +157,6 @@ describe('managedProfileDir', () => {
   it('resolves the headless profile inside the home', () => {
     const home = makeHome()
     expect(managedProfileDir(home)).toBe(join(home, 'profiles', 'headless'))
-    expect(mcpPatchPath(home)).toBe(
-      join(home, 'profiles', 'headless', 'cordis.patch.yml'),
-    )
+    expect(mcpPatchPath(home)).toBe(join(home, 'profiles', 'headless', 'cordis.patch.yml'))
   })
 })

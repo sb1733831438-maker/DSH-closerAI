@@ -1,14 +1,14 @@
 {
   "name": "@closerai/desktop",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "description": "CloserAI Electron desktop shell: hardened window that hosts the DeepSeek Harness web UI.",
   "license": "MIT",
   "type": "module",
   "main": "dist/main/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && node scripts/copy-preload.mjs && vite build",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.renderer.json",
+    "build": "tsc -p tsconfig.build.json \u0026\u0026 node scripts/copy-preload.mjs \u0026\u0026 vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json \u0026\u0026 tsc --noEmit -p tsconfig.renderer.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",

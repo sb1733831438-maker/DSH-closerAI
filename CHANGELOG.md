@@ -5,22 +5,78 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.2] - 2026-08-26
+## [0.8.0] - 2026-08-27
 
-### Tray icon + CI npm env fix
+### Security (REVIEW R-01/R-11/R-12/R-13/R-15)
 
-- System-tray icon is now the official DeepSeek black orca (32x32 transparent),
-  matching the app icon (was a blank placeholder).
-- Release workflow: `NODE_OPTIONS` for the runtime npm install now set via the
-  step `env` (works for both pwsh and bash), fixing the Windows pwsh syntax
-  failure.
+- **IPC sender validation (R-01, P1)**: every privileged bridge call now rejects
+  senders that are not the app's own `file://` page, so XSS inside the DSH SPA
+  (which shares the hardened window and preload) can no longer reach the
+  bridge.
+- **MCP credentials encrypted at rest (R-12)**: MCP `env`/`header` values are
+  encrypted with the OS keychain (safeStorage) as `enc:<base64>`, legacy
+  plaintext stays readable, the renderer sees masked values, and export uses
+  the real values.
+- **Log sanitization (R-13)**: diagnostics now also redact JSON-formatted
+  secrets (`"password":"x"`), not just `KEY=VALUE` and Authorization lines.
+- **safeStorage backend honesty (R-15)**: Linux `basic_text` (obfuscation, not
+  encryption) is surfaced with a clear message.
+- **Live navigation lock (R-11)**: the in-window nav lock follows the current
+  backend origin, so a backend restart on a new port stays usable.
 
-## [0.6.1] - 2026-08-26
+### Correctness (R-02/R-03/R-26/R-27/R-28/R-29)
 
-### Cross-platform fixes
+- **Backend restart serialized (R-02, P1)**: rapid mode/project switches queue
+  restarts instead of racing stop against launch (no double DSH instance).
+- **Atomic + corruption-tolerant stores (R-03, P1)**: every app store writes
+  via temp-write + rename, and a corrupt/unreadable store self-heals to safe
+  defaults instead of crashing the app; `boot()` catches unexpected failures.
+- **Supervisor races (R-27)**: start() waits for an in-flight stop, clears a
+  pending restart timer (no double-spawn), clears the startup timer on ready.
+- **Updater (R-26/R-28)**: `check()` no longer clobbers a downloaded update;
+  `install()` stops the DSH child before the updater quits the app.
+- **Deep link / sessions (R-29)**: chat deep-link with no backend shows the app
+  page instead of doing nothing; session list is cached with invalidation;
+  session import pre-flights conflicts and rolls back partial copies.
 
-- mac npm install OOM fix (`NODE_OPTIONS=--max-old-space-size=4096`) and Linux
-  AppImage asset glob fix.
+### Shipped P1 defects fixed
+
+- **R-34**: MCP "添加服务器" always failed (sentinel misroute) — now adds.
+- **R-33**: preload bridge was missing 6 methods (capabilities, diagnostics
+  export, launch-at-login) — added, with a contract test that pins every
+  channel and bridge method.
+
+### MCP runtime mounting (ROADMAP A-4 / BENCHMARK L1)
+
+- Enabled MCP servers are now **mounted into the running DSH**: plugin rows go
+  into the headless profile's `cordis.patch.yml`, `dsh-mcp-client` connects and
+  registers tools as `mcp__<server>__<tool>`. Credentials are injected through
+  the child environment (`!!js process.env.*`), never written to disk.
+  System-sync mode is untouched. Verified with a real DSH boot E2E.
+
+### Renderer fixes
+
+- R-06 permission hint rendered the literal `${MODE_LABEL[...]}` — fixed.
+- R-07 diagnostics log viewer printed `[object Object]` — now shows the text.
+
+### Engineering gates
+
+- CI: SBOM freshness gate, coverage gate (desktop), Electron smoke job, and a
+  release-gate packaged smoke; cross-installer verify fails loudly.
+- Version single-sourced from `app.getVersion()`; root/desktop aligned.
+- commitlint (Conventional Commits) enforced in CI.
+
+### Community & docs
+
+- Issue/PR templates, dependabot, CODE_OF_CONDUCT, FUNDING, CODEOWNERS.
+- SECURITY.md contact + honest security model; user manuals to v0.8.0;
+  EXECUTION_PLAN reconciled; README/CONTRIBUTING updated.
+
+### Verified
+
+- `pnpm check` green (157 desktop + 13 supervisor + 17 mock-provider tests),
+  coverage gate above thresholds, local packaged-style smoke exit 0, MCP-mount
+  E2E against the real DSH.
 
 ## [0.7.0] - 2026-08-26
 
@@ -37,6 +93,23 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Verified
 
 - `pnpm check` green (**145 tests** + SBOM gate).
+
+## [0.6.2] - 2026-08-26
+
+### Tray icon + CI npm env fix
+
+- System-tray icon is now the official DeepSeek black orca (32x32 transparent),
+  matching the app icon (was a blank placeholder).
+- Release workflow: `NODE_OPTIONS` for the runtime npm install now set via the
+  step `env` (works for both pwsh and bash), fixing the Windows pwsh syntax
+  failure.
+
+## [0.6.1] - 2026-08-26
+
+### Cross-platform fixes
+
+- mac npm install OOM fix (`NODE_OPTIONS=--max-old-space-size=4096`) and Linux
+  AppImage asset glob fix.
 
 ## [0.6.0] - 2026-08-26
 

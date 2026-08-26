@@ -132,11 +132,7 @@ export function toMcpPluginRow(
 function isOurMcpRow(row: unknown): boolean {
   if (typeof row !== 'object' || row === null) return false
   const op = row as PatchOp
-  return (
-    typeof op.id === 'string' &&
-    op.id.startsWith(MCP_ROW_PREFIX) &&
-    op.name === MCP_PLUGIN
-  )
+  return typeof op.id === 'string' && op.id.startsWith(MCP_ROW_PREFIX) && op.name === MCP_PLUGIN
 }
 
 /** Strip our MCP rows from an op; null when the op becomes empty. */
@@ -184,9 +180,7 @@ export function writeDshMcpPlugins(
   const patchPath = mcpPatchPath(home)
   const existing = readPatch(patchPath)
   if (existing === null) return null
-  const kept = existing
-    .map((op) => stripOurRows(op))
-    .filter((op): op is PatchOp => op !== null)
+  const kept = existing.map((op) => stripOurRows(op)).filter((op): op is PatchOp => op !== null)
 
   const inject: Record<string, string> = {}
   const used = new Set<string>()

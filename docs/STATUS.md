@@ -1,6 +1,7 @@
 # Status
 
-> Last updated: 2026-08-26 — v0.7.0 (MCP server management UI).
+> Last updated: 2026-08-27 — v0.8.0 (security + correctness hardening, MCP
+> runtime mounting).
 
 ## Review baseline (2026-08-26)
 
@@ -12,18 +13,40 @@
   and `docs/ROADMAP.md` (v0.8.x / v0.9.x / v1.0 / long-term tracks). Raw role-pass reports in
   `docs/review/`.
 - Verified baseline: `pnpm check` green (145 tests), SBOM 973 components; `sbom.json` regenerated
-  to component version 0.7.0 (was stale 0.6.2). Docs-only change; no source edits this pass.
-  P1 fixes (incl. R-33/R-34) scheduled for v0.8.x per ROADMAP.
+  to component version 0.7.0 (was stale 0.6.2).
 
 ## Current milestone
 
-**v0.7.0 — MCP server management UI.** The workspace page gains a **MCP 服务器**
-card: list servers with enable toggles, add/edit/remove **stdio** (command +
-args + env) and **HTTP** (url + headers) servers, and **export mcp.json** (a
-standard `mcpServers` map) for Claude Code / Kimi Code / editors / DSH plugins.
-Backed by `McpStoreFile` in app userData (`mcp-servers.json`) — works in both
-system-sync and managed modes and never touches the user's DSH settings.
-Verified: `pnpm check` green (**145 tests**, +9 for the store; SBOM gate).
+**v0.8.0 — hardening + MCP runtime mounting.** Everything from the review
+report is done except code signing (R-14, waiting on a purchased certificate):
+
+- **Security**: IPC sender validation (R-01), MCP credentials encrypted at
+  rest + masked from the renderer (R-12), JSON-aware log sanitization (R-13),
+  Linux basic_text backend surfaced (R-15), live nav-lock origin (R-11).
+- **Correctness**: serialized backend restarts (R-02), atomic + corruption-
+  tolerant stores and guarded boot (R-03), supervisor start/stop races (R-27),
+  updater install-order + no-download-clobber (R-28/R-26), deep-link / session
+  cache / import rollback (R-29).
+- **Shipped P1 defects**: MCP add always failed (R-34) and the preload bridge
+  was missing 6 methods (R-33) — both fixed with regression tests.
+- **MCP runtime mounting (ROADMAP A-4)**: enabled MCP servers are mounted into
+  the running DSH via the headless profile patch (`dsh-mcp-client`), with
+  credentials injected through the child environment — verified with a real
+  DSH-boot E2E.
+- **Gates**: SBOM freshness + coverage + commitlint + Electron smoke in CI;
+  release gate runs the packaged smoke; version single-sourced.
+- **Community/docs**: issue/PR templates, dependabot, COC, FUNDING, CODEOWNERS,
+  SECURITY contact, manuals to v0.8.0, EXECUTION_PLAN reconciled.
+
+Verified: `pnpm check` green (157 desktop + 13 supervisor + 17 mock-provider
+= **187 tests**), coverage above thresholds, local packaged-style smoke exit 0,
+MCP-mount E2E green. Remaining: installer code-signing (R-14).
+
+## What is done (v0.7.x)
+
+- v0.7.0 — MCP server management UI: add/edit/remove stdio + HTTP servers,
+  enable toggles, export standard `mcp.json`; store in app userData, never
+  touches the user's DSH settings.
 
 ## What is done (v0.6.x)
 
@@ -36,27 +59,6 @@ Verified: `pnpm check` green (**145 tests**, +9 for the store; SBOM gate).
 
 - v0.5.0 — CycloneDX SBOM (973 components) wired into `pnpm check`
   (`pnpm sbom:gen`) and uploaded per release; feature shipped within v0.6.x.
-
-# Status
-
-> Last updated: 2026-08-26 — v0.6.0 (SBOM + macOS/Linux installers).
-
-## Current milestone
-
-**v0.6.0 — Supply-chain transparency + cross-platform.** CycloneDX SBOM
-(973 components) wired into `pnpm check` and uploaded per release; macOS
-(dmg x64/arm64) and Linux (AppImage) installers via a cross-installer matrix
-in the release workflow (unsigned mac; Linux node-pty degraded under
-`--ignore-scripts`).
-
-## What is done (v0.4.x)
-
-- v0.4.1 — auto-update (electron-updater + latest.yml) and stale task-board
-  lock self-heal; `--publish never` pack fix.
-
-# Status
-
-> Last updated: 2026-08-25 — v0.3.0 (sync experience) in progress.
 
 ## Current milestone
 

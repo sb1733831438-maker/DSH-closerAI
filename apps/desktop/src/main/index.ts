@@ -470,13 +470,19 @@ function main(): void {
     void stopBackend().finally(() => app.quit())
   })
 
-  void app.whenReady().then(boot).catch((error) => {
-    // Never leave an unhandled rejection from boot(): surface it and exit
-    // with a code instead of silently hanging (REVIEW R-03).
-    console.error('[closerai] boot crashed:', error instanceof Error ? error.stack ?? error.message : error)
-    notify('CloserAI — 启动失败', '出现未预期的启动错误，应用将退出。请查看诊断信息后重试。')
-    app.exit(1)
-  })
+  void app
+    .whenReady()
+    .then(boot)
+    .catch((error) => {
+      // Never leave an unhandled rejection from boot(): surface it and exit
+      // with a code instead of silently hanging (REVIEW R-03).
+      console.error(
+        '[closerai] boot crashed:',
+        error instanceof Error ? (error.stack ?? error.message) : error,
+      )
+      notify('CloserAI — 启动失败', '出现未预期的启动错误，应用将退出。请查看诊断信息后重试。')
+      app.exit(1)
+    })
 }
 
 if (!app.requestSingleInstanceLock()) {
