@@ -1,5 +1,10 @@
 # Execution Plan
 
+> **Reconciled 2026-08-27 (v0.8.0).** This file documents the original
+> bootstrap plan (v0.0.1 → v0.1.0) and the follow-up tracks. The **living**
+> status is [`STATUS.md`](STATUS.md) and the forward plan is
+> [`ROADMAP.md`](ROADMAP.md) (v0.8.x / v0.9.x / v1.0 / long-term).
+
 Roadmap toward the v0.1.0 daily-use release. Each minor version has its own branch
 `release/v0.0.x-<short-name>`, quality gates, annotated tag, GitHub Release, CHANGELOG entry,
 and test evidence.
@@ -50,7 +55,8 @@ and test evidence.
 ## v0.0.6 — Extensions and Web
 
 - [x] Web Search / Fetch capability toggles (rendered into presets at install time)
-- [ ] MCP server management (deferred: DSH config schema not discoverable; do not guess)
+- [x] MCP server management (landed in v0.7.0: add/edit/toggle/delete/export;
+      live mounting into a running DSH is tracked as ROADMAP A-4 in v0.8.0)
 - [x] Skills capability toggle (mount/unmount tool-skill in the Code preset)
 - [x] Plugin permission manifest (per-mode designed capability surface in the management page)
 - [ ] Subagent / plan / task status UI (rendered natively by the DSH UI; adopted)
@@ -58,19 +64,19 @@ and test evidence.
 ## v0.0.7 — Native Desktop
 
 - [x] Tray, notifications, launch-at-login
-- [ ] Auto-update framework (deferred to v0.0.8+)
+- [x] Auto-update framework (electron-updater + GitHub Releases; landed in v0.4.0)
 - [x] Log viewer and diagnostics export (landed in v0.0.6)
-- [ ] System permission guidance (with v0.0.8 hardening)
+- [x] System permission guidance (landed with the v0.0.8 hardening)
 
 ## v0.0.8 — Packaging and Security
 
 - [x] Windows CI build (release-build workflow, tag-triggered)
-- [ ] macOS / Linux CI builds (deferred: Windows installer is the v0.1.0 gate)
+- [x] macOS / Linux CI builds (cross-installer matrix; landed in v0.6.0)
 - [x] Installers + SHA-256 checksums (CloserAI-0.0.8-Setup-x64.exe + SHA256SUMS.txt)
 - [x] CSP / Origin / navigation security tests (security.test.ts, 17 cases)
 - [x] Dependency and license audit (scripts/audit-licenses.mjs)
 - [x] THIRD_PARTY_NOTICES (regenerated from the audit), SECURITY exists
-- [ ] SBOM (CycloneDX/Syft) — deferred
+- [x] SBOM (CycloneDX, landed in v0.5.0; regenerated in CI)
 
 ## v0.0.9 — Release Candidate
 
@@ -80,7 +86,8 @@ and test evidence.
 - [x] Offline / invalid-key / timeout connectivity tests (providers.test.ts)
 - [x] Complete bilingual README, user manual (EN+zh), troubleshooting
 - [x] Plugin dev docs (docs/PLUGIN_DEV.md)
-- [ ] Resolve all P0/P1 defects
+- [x] Resolve all P0/P1 defects (0×P0; 7×P1 closed in v0.8.0 per
+      docs/REVIEW_2026-08-26.md; code signing R-14 remains, needs a cert)
 - [ ] Publish v0.1.0-rc.1 (then rc.2, rc.3 as needed)
 
 ## v0.1.0 — Daily-use Release
@@ -108,7 +115,7 @@ and test evidence.
 
 ### v0.5.x — Capability surface (DSH ecosystem, no fork)
 
-- [ ] MCP server management UI (re-evaluate feasibility as DSH evolves)
+- [x] MCP server management UI (landed in v0.7.0)
 - [ ] Per-project DSH-home isolation & workspace switching visualization
 
 ### Long term — "personal AI workstation"

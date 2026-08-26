@@ -56,6 +56,19 @@ jobs:
             exit 1;
           }
 
+  commitlint:
+    name: commitlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Lint commit messages (Conventional Commits)
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: commitlint.config.mjs
+
   coverage:
     name: coverage (desktop)
     runs-on: ubuntu-latest

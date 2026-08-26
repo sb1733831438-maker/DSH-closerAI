@@ -1,0 +1,7 @@
+# Default code owners for the repository.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-
+# and-features/customizing-your-repository/about-code-owners
+* @sb1733831438-maker
+
+# CI / release automation is owned by the same maintainer for now.
+.github/ @sb1733831438-maker

@@ -1,0 +1,82 @@
+name: Bug report
+description: Report a bug in CloserAI
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue. Please fill in the
+        details below so we can reproduce and fix it quickly.
+
+  - type: input
+    id: version
+    attributes:
+      label: CloserAI version
+      description: >-
+        Version shown on the diagnostics page (e.g. 0.8.0), or the git commit.
+      placeholder: 0.8.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows x64
+        - macOS (Intel)
+        - macOS (Apple Silicon)
+        - Linux (AppImage)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug.
+      placeholder: When I ..., the app ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: false
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal, deterministic steps. Include the provider/mode used.
+      placeholder: |
+        1. Open CloserAI
+        2. Switch to Work mode
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / diagnostics
+      description: >-
+        Paste sanitized output from the manage page's 诊断 -> 导出诊断 if relevant.
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for a duplicate.
+          required: true
+        - label: >-
+            I am not reporting a security issue here (use the private
+            security advisory instead).
+          required: true

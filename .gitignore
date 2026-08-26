@@ -25,6 +25,9 @@ pnpm-debug.log*
 *.p12
 *.pfx
 
+# Local AI-agent scratch (pi / Claude Code etc.)
+.pi/
+
 # OS / editor
 .DS_Store
 Thumbs.db

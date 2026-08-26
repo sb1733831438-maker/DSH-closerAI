@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security issue
+    url: >-
+      "https://github.com/sb1733831438-maker/DSH-closerAI/\
+      security/advisories/new"
+    about: >-
+      Report a security vulnerability privately via a GitHub security advisory.
+  - name: Documentation
+    url: >-
+      "https://github.com/sb1733831438-maker/DSH-closerAI/\
+      blob/main/docs/USER_MANUAL.zh.md"
+    about: >-
+      User manual (中文). README links the English manual and troubleshooting.

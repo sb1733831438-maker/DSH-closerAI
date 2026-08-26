@@ -1,16 +1,19 @@
 # CloserAI User Manual
 
 CloserAI is a local-first, model-agnostic desktop AI workbench built on the
-DeepSeek Harness (DSH) runtime. This manual covers the v0.0.8 Windows
-installer. 简体中文版见 [USER_MANUAL.zh.md](USER_MANUAL.zh.md).
+DeepSeek Harness (DSH) runtime. This manual covers the v0.8.0 release.
+简体中文版见 [USER_MANUAL.zh.md](USER_MANUAL.zh.md).
 
 ## Installing
 
-1. Download `CloserAI-0.0.8-Setup-x64.exe` from the [v0.0.8
-   release](https://github.com/sb1733831438-maker/DSH-closerAI/releases).
+1. Download the installer for your platform from the [latest
+   release](https://github.com/sb1733831438-maker/DSH-closerAI/releases):
+   `CloserAI-<version>-Setup-x64.exe` (Windows), `CloserAI-<version>-*.dmg`
+   (macOS), or `CloserAI-<version>.AppImage` (Linux).
 2. Verify the SHA-256 against `SHA256SUMS.txt` (`Get-FileHash` on Windows).
-3. Run the installer (SmartScreen: More info → Run anyway until the app is
-   code-signed).
+3. Run the installer. Until the app is code-signed, Windows SmartScreen shows
+   "More info → Run anyway"; macOS builds are unsigned for now (see
+   `docs/ROADMAP.md`).
 
 ## First run
 
@@ -37,6 +40,10 @@ Switch modes from the tray (工作区) or the management page.
 - **会话**: list, delete, export, and import DSH sessions.
 - **能力**: toggle web search / fetch / skills per mode.
 - **权限**: the designed capability surface of each mode.
+- **MCP 服务器**: add stdio or HTTP MCP servers; toggle, edit, and delete
+  them, and export a standard `mcp.json`. Credential values (env / headers)
+  are encrypted at rest with the OS keychain and shown masked in the UI —
+  editing keeps the stored secret unless you type a new value.
 - **诊断与日志**: live supervisor state and redacted child logs; export for
   support.
 - **开机启动**: launch CloserAI at login.
