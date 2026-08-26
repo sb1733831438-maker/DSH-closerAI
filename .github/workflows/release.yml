@@ -104,7 +104,7 @@ jobs:
           } | Set-Content apps\desktop\release\SHA256SUMS.txt
           Get-Content apps\desktop\release\SHA256SUMS.txt
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows-installer
           path: |
