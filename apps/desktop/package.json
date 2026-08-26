@@ -25,7 +25,7 @@
     "@deepseek-ai/cordis-plugin-group": "1.0.1",
     "@deepseek-ai/dsh": "0.1.0-rc.6",
     "electron-updater": "6.6.2",
-    "js-yaml": "4.2.0"
+    "js-yaml": "5.3.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
