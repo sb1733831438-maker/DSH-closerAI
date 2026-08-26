@@ -1,5 +1,31 @@
 # Status
 
+> Last updated: 2026-08-26 — v0.7.0 (MCP server management UI).
+
+## Current milestone
+
+**v0.7.0 — MCP server management UI.** The workspace page gains a **MCP 服务器**
+card: list servers with enable toggles, add/edit/remove **stdio** (command +
+args + env) and **HTTP** (url + headers) servers, and **export mcp.json** (a
+standard `mcpServers` map) for Claude Code / Kimi Code / editors / DSH plugins.
+Backed by `McpStoreFile` in app userData (`mcp-servers.json`) — works in both
+system-sync and managed modes and never touches the user's DSH settings.
+Verified: `pnpm check` green (**145 tests**, +9 for the store; SBOM gate).
+
+## What is done (v0.6.x)
+
+- v0.6.2 — macOS/Linux installers (dmg arm64 + AppImage via the cross-installer
+  matrix), per-platform auto-update metadata, black-orca tray icon, and the
+  pwsh `NODE_OPTIONS` env-block CI fix; all three platform builds green with 8
+  release assets.
+
+## What is done (v0.5.x)
+
+- v0.5.0 — CycloneDX SBOM (973 components) wired into `pnpm check`
+  (`pnpm sbom:gen`) and uploaded per release; feature shipped within v0.6.x.
+
+# Status
+
 > Last updated: 2026-08-26 — v0.6.0 (SBOM + macOS/Linux installers).
 
 ## Current milestone
