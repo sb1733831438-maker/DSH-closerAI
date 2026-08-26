@@ -70,4 +70,41 @@ describe('createUpdateController', () => {
     await c.install()
     expect(m.updater.quitAndInstall).toHaveBeenCalled()
   })
+
+  it('R-26: check() does not clobber a completed download', async () => {
+    const m = makeUpdater()
+    const c = createUpdateController({ updater: m.updater, isPackaged: () => true })
+    m.emit('update-downloaded', { version: '1.2.3' })
+    await c.check()
+    expect(c.status()).toEqual({ state: 'downloaded', version: '1.2.3' })
+    expect(m.updater.checkForUpdates).not.toHaveBeenCalled()
+  })
+
+  it('R-26: check() does not clobber an in-flight download', async () => {
+    const m = makeUpdater()
+    const c = createUpdateController({ updater: m.updater, isPackaged: () => true })
+    m.emit('download-progress', { percent: 50 })
+    await c.check()
+    expect(c.status()).toEqual({ state: 'downloading', percent: 50 })
+    expect(m.updater.checkForUpdates).not.toHaveBeenCalled()
+  })
+
+  it('R-28: install() stops the backend before quitAndInstall', async () => {
+    const m = makeUpdater()
+    const order: string[] = []
+    const c = createUpdateController({
+      updater: m.updater,
+      isPackaged: () => true,
+      beforeQuitAndInstall: async () => {
+        order.push('stop-backend')
+      },
+    })
+    m.updater.quitAndInstall = vi.fn(() => {
+      order.push('quit-and-install')
+    })
+    m.emit('update-downloaded', { version: '1.2.3' })
+    await c.install()
+    expect(order).toEqual(['stop-backend', 'quit-and-install'])
+    expect(m.updater.quitAndInstall).toHaveBeenCalled()
+  })
 })

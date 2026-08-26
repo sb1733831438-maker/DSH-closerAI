@@ -24,12 +24,25 @@ export function workspaceKeyFromPath(input: string): string {
 
 export class SessionStore {
   private readonly root: string
+  /** Short-TTL cache so the manage page does not full-stat on every refresh
+   *  (R-29). Invalidated by any mutation (delete/import). */
+  private static readonly LIST_TTL_MS = 1000
+  private cache: { at: number; entries: SessionEntry[] } | null = null
 
   constructor(sessionsRoot: string) {
     this.root = sessionsRoot
   }
 
   async list(): Promise<SessionEntry[]> {
+    if (this.cache !== null && Date.now() - this.cache.at < SessionStore.LIST_TTL_MS) {
+      return this.cache.entries
+    }
+    const entries = await this.listFresh()
+    this.cache = { at: Date.now(), entries }
+    return entries
+  }
+
+  private async listFresh(): Promise<SessionEntry[]> {
     let top: Dirent<string>[]
     try {
       top = await readdir(this.root, { withFileTypes: true, encoding: 'utf8' })
@@ -97,6 +110,7 @@ export class SessionStore {
   async delete(id: string): Promise<void> {
     const dir = await this.resolveDir(id)
     await rm(dir, { recursive: true, force: true })
+    this.invalidateCache()
   }
 
   /** Copy a whole session directory into the given destination directory. */
@@ -114,6 +128,7 @@ export class SessionStore {
   /**
    * Import a session directory (named session-<uuid>) under the given
    * workspace key inside the sessions root. Returns the new session dir.
+   * Pre-flights conflicts and rolls back partial copies (R-29).
    */
   async importFrom(srcDir: string, workspaceKey: string): Promise<string> {
     const srcResolved = resolve(srcDir)
@@ -122,24 +137,39 @@ export class SessionStore {
       throw new Error('imported folder must be named session-<uuid>, got ' + name)
     }
     const targetDir = join(this.root, workspaceKey, name)
-    await mkdir(targetDir, { recursive: true })
-    let copied = 0
+    const recordPath = join(targetDir, SESSION_RECORD_FILE)
+
+    // Pre-flight conflict check BEFORE copying anything, so an existing
+    // session is never left half-overwritten (R-29).
+    try {
+      await stat(recordPath)
+      throw new Error('session record already exists at ' + recordPath)
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+    }
+
+    const files: string[] = []
     for (const file of await readdir(srcResolved, { withFileTypes: true })) {
       if (!file.isFile()) continue
-      const from = join(srcResolved, file.name)
-      const to = join(targetDir, file.name)
-      if (file.name === SESSION_RECORD_FILE) {
-        try {
-          await stat(to)
-          throw new Error('session record already exists at ' + to)
-        } catch (error) {
-          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
-        }
-      }
-      await copyFile(from, to)
-      copied += 1
+      files.push(file.name)
     }
-    if (copied === 0) throw new Error('nothing to import from ' + srcResolved)
+    if (files.length === 0) throw new Error('nothing to import from ' + srcResolved)
+
+    try {
+      await mkdir(targetDir, { recursive: true })
+      for (const file of files) {
+        await copyFile(join(srcResolved, file), join(targetDir, file))
+      }
+    } catch (error) {
+      // Roll back the partial import so no broken session remains.
+      await rm(targetDir, { recursive: true, force: true }).catch(() => undefined)
+      throw error
+    }
+    this.invalidateCache()
     return targetDir
+  }
+
+  private invalidateCache(): void {
+    this.cache = null
   }
 }

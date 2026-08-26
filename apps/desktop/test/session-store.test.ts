@@ -137,6 +137,34 @@ describe('SessionStore.importFrom', () => {
     writeFileSync(join(src, 'session.jsonl.zstd'), 'new', 'utf8')
     try {
       await expect(store.importFrom(src, '--w--')).rejects.toThrow('already exists')
+      // R-29: the pre-flight check must leave the existing session untouched
+      // (no partially copied 'new' record, no stray files in the target dir).
+      const existingDir = join(root, '--w--', ID_A)
+      expect(readdirSync(existingDir)).toEqual(['session.jsonl.zstd'])
+      expect(readFileSync(join(existingDir, 'session.jsonl.zstd'), 'utf8')).toBe('old')
+    } finally {
+      rmSync(src, { recursive: true, force: true })
+    }
+  })
+
+  it('R-29: mutations invalidate the list cache immediately', async () => {
+    const store = new SessionStore(root)
+    makeSession('--w--', ID_A, 'a')
+    expect(await store.list()).toHaveLength(1) // warms the cache
+
+    // delete invalidates: the removed session is gone even right after a list
+    await store.delete(ID_A)
+    expect(await store.list()).toHaveLength(0)
+
+    // import invalidates: the new session shows up immediately
+    const src = join(root, '..', ID_C)
+    mkdirSync(src, { recursive: true })
+    writeFileSync(join(src, 'session.jsonl.zstd'), 'imported', 'utf8')
+    try {
+      await store.importFrom(src, '--w--')
+      const entries = await store.list()
+      expect(entries).toHaveLength(1)
+      expect(entries[0]!.id).toBe(ID_C)
     } finally {
       rmSync(src, { recursive: true, force: true })
     }

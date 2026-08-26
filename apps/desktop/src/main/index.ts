@@ -58,6 +58,9 @@ function main(): void {
     // safe and the smoke tests exercise the real autoUpdater path.
     updater: autoUpdater as unknown as UpdaterLike,
     isPackaged: () => app.isPackaged,
+    // Stop the DSH child before the updater quits the app (R-28); stopBackend
+    // is declared below, so reference it lazily to avoid the TDZ.
+    beforeQuitAndInstall: () => stopBackend(),
   })
   const dshHome = resolvedHome.home
   const dshMode = resolvedHome.mode
@@ -102,7 +105,14 @@ function main(): void {
   const showChat = (): void => {
     const win = ensureWindow()
     focusWindow()
-    if (backend !== null) void win.loadURL(backend.dsh.url)
+    if (backend !== null) {
+      void win.loadURL(backend.dsh.url)
+    } else {
+      // Deep link / menu arrived before (or without) a running backend (R-29):
+      // show the app's own page instead of silently doing nothing. The boot
+      // flow (or onboarding) drives the backend from there.
+      showOnboarding()
+    }
   }
 
   const handleDeepLink = (link: string): void => {
