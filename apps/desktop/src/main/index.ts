@@ -215,6 +215,7 @@ function main(): void {
         mode,
         workspaceDir: workspaceDirFor(),
         capabilities: capabilitiesStore.read(),
+        mcpServers: mcpStore.read().servers,
       })
     }
     if (running === null) return

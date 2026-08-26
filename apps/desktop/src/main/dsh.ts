@@ -19,6 +19,11 @@ export interface StartDshOptions {
   apiKey?: string
   /** Working directory for the DSH child (also the session workspace root). */
   cwd?: string
+  /**
+   * Extra env vars for the child, e.g. CLOSERAI_MCP_* secrets referenced by
+   * the mounted MCP plugin rows via `!!js process.env.*` (ROADMAP A-4).
+   */
+  extraEnv?: Record<string, string>
 }
 
 /**
@@ -38,6 +43,11 @@ export async function startDsh(home: string, options: StartDshOptions = {}): Pro
   }
   if (options.apiKey !== undefined && options.apiKey.length > 0) {
     env.DEEPSEEK_API_KEY = options.apiKey
+  }
+  if (options.extraEnv !== undefined) {
+    for (const [key, value] of Object.entries(options.extraEnv)) {
+      env[key] = value
+    }
   }
 
   const supervisor = new DshSupervisor({

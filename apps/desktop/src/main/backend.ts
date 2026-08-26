@@ -1,9 +1,10 @@
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { startMockServer, type MockServer } from '@closerai/mock-provider'
-import type { Capabilities, Mode, ProviderProfile } from '../shared/types.js'
+import type { Capabilities, McpServer, Mode, ProviderProfile } from '../shared/types.js'
 import { DEFAULT_CAPABILITIES } from './capabilities.js'
 import { writeDshAgentPresetDefault, writeDshProviderSettings } from './dsh-settings.js'
+import { writeDshMcpPlugins } from './dsh-mcp.js'
 import { startDsh, type RunningDsh } from './dsh.js'
 import { installPresets } from './presets.js'
 
@@ -25,6 +26,13 @@ export interface LaunchBackendOptions {
   workspaceDir: string
   /** Capability toggles rendered into the installed agent presets. */
   capabilities?: Capabilities
+  /**
+   * MCP servers to mount into the running DSH (decrypted view from the
+   * mcp store). Only enabled servers are mounted; credential values are
+   * injected through the child environment, never written to the patch.
+   * Ignored in system-sync mode (the user's own home is never written).
+   */
+  mcpServers?: McpServer[]
   /**
    * true (default) = CloserAI manages the home: installs Chat/Work/Code
    * presets and writes provider/preset settings. false = system-sync: boot
@@ -65,9 +73,15 @@ export async function launchBackend(options: LaunchBackendOptions): Promise<Runn
   writeDshProviderSettings(settingsPath, effective)
   writeDshAgentPresetDefault(settingsPath, mode ?? 'chat')
 
+  // Mount enabled MCP servers into the running DSH (ROADMAP A-4): the plugin
+  // rows go into the headless profile's cordis.patch.yml; credential values
+  // are injected as CLOSERAI_MCP_* env vars referenced by !!js expressions.
+  const mcpMountEnv = writeDshMcpPlugins(home, options.mcpServers ?? [])
+
   const dsh = await startDsh(home, {
     apiKey: profile.kind === 'mock' ? 'mock-key' : apiKey,
     cwd: workspaceDir,
+    extraEnv: mcpMountEnv ?? undefined,
   })
 
   return { dsh, mockServer, profile: effective, mode }
