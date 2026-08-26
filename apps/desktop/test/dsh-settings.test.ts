@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import yaml from 'js-yaml'
-import { writeDshProviderSettings } from '../src/main/dsh-settings.js'
+import { writeDshAgentPresetDefault, writeDshProviderSettings } from '../src/main/dsh-settings.js'
 import { DEEPSEEK_DEFAULT } from '../src/main/providers.js'
 
 const tempDirs: string[] = []
@@ -34,5 +34,25 @@ describe('writeDshProviderSettings', () => {
     const text = readFileSync(settingsPath, 'utf8')
     expect(text).not.toContain('apiKey')
     expect(text).not.toContain('sk-')
+  })
+})
+
+describe('writeDshAgentPresetDefault', () => {
+  it('writes the default preset selector and preserves other sections', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'closerai-settings-'))
+    tempDirs.push(dir)
+    const settingsPath = join(dir, 'settings.yaml')
+
+    writeDshAgentPresetDefault(settingsPath, 'code')
+    const doc = yaml.load(readFileSync(settingsPath, 'utf8')) as Record<string, unknown>
+    expect(doc['agent-presets']).toEqual({ default: 'code' })
+
+    // overwriting a different mode replaces the default without losing
+    // unrelated top-level sections (e.g. llm-deepseek written earlier)
+    writeDshProviderSettings(settingsPath, DEEPSEEK_DEFAULT)
+    writeDshAgentPresetDefault(settingsPath, 'work')
+    const again = yaml.load(readFileSync(settingsPath, 'utf8')) as Record<string, unknown>
+    expect(again['agent-presets']).toEqual({ default: 'work' })
+    expect(again['llm-deepseek']).toBeTruthy()
   })
 })

@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -67,5 +67,16 @@ describe('SecretStore', () => {
     store.delete('a')
     expect(store.get('a')).toBeNull()
     expect(store.listIds()).toEqual(['b'])
+  })
+
+  it('R-31: returns null for undecryptable ciphertext instead of throwing', () => {
+    const { store, filePath } = makeStore()
+    store.set('a', '1')
+    // Corrupt the stored ciphertext for one id so decryption must fail.
+    writeFileSync(filePath, '{"a": "not-valid-ciphertext"}', 'utf8')
+    expect(store.get('a')).toBeNull()
+    // other operations still work and repair the document
+    store.set('b', '2')
+    expect(store.get('b')).toBe('2')
   })
 })
