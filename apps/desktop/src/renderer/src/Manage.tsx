@@ -411,9 +411,9 @@ export function Manage(): React.JSX.Element {
       <section className="card">
         <h2>当前模式</h2>
         <p>
-          {activeProject !== null
-            ? '项目「' + activeProject.name + '」· ' + MODE_LABEL[activeProject.mode]
-            : '未绑定项目 · ' + MODE_LABEL[state.mode] + ' 模式'}
+          {activeProject === null
+            ? '未绑定项目 · ' + MODE_LABEL[state.mode] + ' 模式'
+            : '项目「' + activeProject.name + '」· ' + MODE_LABEL[activeProject.mode]}
         </p>
       </section>
 
@@ -493,7 +493,7 @@ export function Manage(): React.JSX.Element {
                   <strong>{p.name}</strong>
                   <span className="meta">
                     {MODE_LABEL[p.mode]}
-                    {p.workspaceDir !== null ? ' · ' + p.workspaceDir : ''}
+                    {p.workspaceDir === null ? '' : ' · ' + p.workspaceDir}
                   </span>
                 </div>
                 <div className="row-actions">

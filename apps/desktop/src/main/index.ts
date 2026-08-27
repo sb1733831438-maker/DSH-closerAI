@@ -105,13 +105,13 @@ function main(): void {
   const showChat = (): void => {
     const win = ensureWindow()
     focusWindow()
-    if (backend !== null) {
-      void win.loadURL(backend.dsh.url)
-    } else {
+    if (backend === null) {
       // Deep link / menu arrived before (or without) a running backend (R-29):
       // show the app's own page instead of silently doing nothing. The boot
       // flow (or onboarding) drives the backend from there.
       showOnboarding()
+    } else {
+      void win.loadURL(backend.dsh.url)
     }
   }
 
@@ -452,8 +452,11 @@ function main(): void {
 
   app.on('second-instance', (_event, argv) => {
     const link = argv.find((arg) => arg.startsWith(DEEP_LINK_SCHEME + '://'))
-    if (link !== undefined) handleDeepLink(link)
-    else focusWindow()
+    if (link === undefined) {
+      focusWindow()
+    } else {
+      handleDeepLink(link)
+    }
   })
 
   app.on('render-process-gone', (_event, _webContents, details) => {
@@ -494,8 +497,8 @@ function main(): void {
     })
 }
 
-if (!app.requestSingleInstanceLock()) {
-  app.quit()
-} else {
+if (app.requestSingleInstanceLock()) {
   main()
+} else {
+  app.quit()
 }

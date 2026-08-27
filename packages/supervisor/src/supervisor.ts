@@ -137,7 +137,9 @@ export class DshSupervisor extends EventEmitter {
       this.settleStart(new Error('stopped before DSH became ready'))
     }
 
-    if (this.child !== null) {
+    if (this.child === null) {
+      this.finishStop()
+    } else {
       const child = this.child
       this.setState('stopping')
       const grace = setTimeout(() => {
@@ -145,8 +147,6 @@ export class DshSupervisor extends EventEmitter {
       }, this.options.shutdownGraceMs)
       child.once('exit', () => clearTimeout(grace))
       child.kill('SIGTERM')
-    } else {
-      this.finishStop()
     }
 
     return this.stopPromise
@@ -355,8 +355,11 @@ export class DshSupervisor extends EventEmitter {
     this.pendingStart = null
     this.startPromise = null
     if (pending !== null) {
-      if (error !== null) pending.reject(error)
-      else pending.resolve(this.status)
+      if (error === null) {
+        pending.resolve(this.status)
+      } else {
+        pending.reject(error)
+      }
     }
   }
 
