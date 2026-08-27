@@ -139,7 +139,13 @@ export function startMockServer(options: MockServerOptions = {}): Promise<MockSe
       const address = server.address() as AddressInfo
       const close = (): Promise<void> =>
         new Promise((done) => {
+          // Bounded shutdown: force-close lingering keep-alive connections so
+          // `server.close()` never hangs (a killed DSH child can leave a
+          // half-open socket that blocks the callback).
+          server.closeAllConnections?.()
           server.close(() => done())
+          const timer = setTimeout(() => done(), 2000)
+          timer.unref?.()
         })
       resolve({ port: address.port, url: `http://127.0.0.1:${address.port}`, close })
     })
