@@ -151,7 +151,7 @@ jobs:
           - os: macos-latest
             platform: mac
             script: pack:mac
-            asset_glob: 'CloserAI-*-*.dmg'
+            asset_glob: 'CloserAI-*.dmg'
             update_yml: 'latest-mac.yml'
           - os: ubuntu-latest
             platform: linux
