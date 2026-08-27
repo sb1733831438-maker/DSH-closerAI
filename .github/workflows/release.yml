@@ -83,12 +83,25 @@ jobs:
         shell: pwsh
         timeout-minutes: 10
         run: |
-          # CloserAI.exe is a GUI-subsystem app: `&` returns immediately and
-          # never sets $LASTEXITCODE. Start-Process -Wait blocks and captures
-          # the real exit code (the smoke path calls app.exit(0|1)).
-          $proc = Start-Process -FilePath `
-            "apps\desktop\release\win-unpacked\CloserAI.exe" `
-            -ArgumentList "--smoke-test" -Wait -PassThru
+          # CloserAI.exe is a GUI-subsystem app; redirect output to files so a
+          # failure shows the app's own logs, and bound the wait so the gate
+          # can never hang. The smoke path exits via app.exit(0|1) (with a 5s
+          # hard-exit fallback in finishSmoke).
+          $outFile = Join-Path $env:RUNNER_TEMP 'closerai-smoke-out.log'
+          $errFile = Join-Path $env:RUNNER_TEMP 'closerai-smoke-err.log'
+          $exe = "apps\desktop\release\win-unpacked\CloserAI.exe"
+          $proc = Start-Process -FilePath $exe -ArgumentList "--smoke-test" `
+            -RedirectStandardOutput $outFile -RedirectStandardError $errFile `
+            -PassThru
+          if (-not $proc.WaitForExit(180000)) {
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            Write-Host "=== app stdout ==="
+            Get-Content $outFile, $errFile -ErrorAction SilentlyContinue
+            Write-Error "packaged smoke TIMED OUT after 180s"
+            exit 1
+          }
+          Write-Host "=== app stdout ==="
+          Get-Content $outFile, $errFile -ErrorAction SilentlyContinue
           if ($proc.ExitCode -ne 0) {
             Write-Error "packaged smoke failed with exit $($proc.ExitCode)"
             exit 1
