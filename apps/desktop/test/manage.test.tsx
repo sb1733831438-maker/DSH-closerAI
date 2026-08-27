@@ -31,6 +31,7 @@ const APP_STATE: AppState = {
   launchAtLogin: false,
   backendUrl: null,
   dshMode: 'managed',
+  systemSyncError: null,
 }
 
 const DIAGNOSTICS: Diagnostics = {
@@ -55,6 +56,7 @@ interface MockBridge {
   listMcpServers: ReturnType<typeof vi.fn>
   addMcpServer: ReturnType<typeof vi.fn>
   updateMcpServer: ReturnType<typeof vi.fn>
+  retryBackend: ReturnType<typeof vi.fn>
   getDiagnostics: ReturnType<typeof vi.fn>
   exportDiagnostics: ReturnType<typeof vi.fn>
   setLaunchAtLogin: ReturnType<typeof vi.fn>
@@ -75,6 +77,7 @@ beforeEach(() => {
     exportDiagnostics: vi.fn().mockResolvedValue({ ok: true, path: '/tmp/diag.txt' }),
     setLaunchAtLogin: vi.fn().mockResolvedValue({ ok: true }),
     setCapabilities: vi.fn().mockResolvedValue({ ok: true }),
+    retryBackend: vi.fn().mockResolvedValue({ ok: true }),
     openChat: vi.fn().mockResolvedValue({ ok: true }),
   }
   // Expose the mocked bridge to the component.
@@ -133,5 +136,22 @@ describe('Manage (renderer)', () => {
     expect(logview?.textContent).toContain('dsh web: http://127.0.0.1:55182')
     expect(logview?.textContent).toContain('ready')
     expect(logview?.textContent).not.toContain('[object Object]')
+  })
+
+  it('UX: shows the system-sync recovery card and retries the backend', async () => {
+    bridge.getAppState = vi.fn().mockResolvedValue({
+      ...APP_STATE,
+      dshMode: 'system-sync',
+      systemSyncError:
+        '检测到另一个 DSH 正在使用同一 DSH 目录（很可能是你的 web 端 DSH 正在运行）。请先关闭它，再重新打开 CloserAI。',
+    })
+    render(<Manage />)
+    await screen.findByText('CloserAI 工作区')
+
+    expect(screen.getByText('无法启动系统 DSH')).toBeInTheDocument()
+    expect(screen.getByText(/请先关闭正在使用 ~\/.dsh 的 web 端 DSH/)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    expect(bridge.retryBackend).toHaveBeenCalledTimes(1)
   })
 })

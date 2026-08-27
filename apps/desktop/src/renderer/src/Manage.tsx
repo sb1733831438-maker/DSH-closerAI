@@ -212,6 +212,18 @@ export function Manage(): React.JSX.Element {
     setCaps((previous) => previous ?? { ...next.capabilities })
   }
 
+  const onRetryBackend = async (): Promise<void> => {
+    setBusy(true)
+    try {
+      flash(await window.closerai.retryBackend())
+      await refresh()
+    } catch (e) {
+      setError(errText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   useEffect(() => {
     void refresh().catch((e) => setError(errText(e)))
     void loadMcp().catch((e) => setError(errText(e)))
@@ -407,6 +419,33 @@ export function Manage(): React.JSX.Element {
 
       {notice !== '' && <p className="ok">{notice}</p>}
       {error !== '' && <p className="bad">{error}</p>}
+
+      {state.systemSyncError !== null && (
+        <div
+          className="banner"
+          style={{
+            background: '#fff4f0',
+            border: '1px solid #f0c0b0',
+            borderRadius: 8,
+            padding: '12px 16px',
+            color: '#7a2e14',
+            fontSize: 13,
+            lineHeight: 1.6,
+          }}
+        >
+          <strong>无法启动系统 DSH</strong>
+          <p style={{ margin: '6px 0' }}>{state.systemSyncError}</p>
+          <p style={{ margin: '0 0 8px' }}>
+            请先关闭正在使用 ~/.dsh 的 web 端 DSH（或其他 DSH 实例），再点重试；如需与 web
+            端并存，可用 CLOSERAI_DSH_MODE=managed 启动隔离模式（桌面端会话不与 web 端共享）。
+          </p>
+          <div className="row-actions">
+            <button className="primary" disabled={busy} onClick={() => void onRetryBackend()}>
+              重试
+            </button>
+          </div>
+        </div>
+      )}
 
       <section className="card">
         <h2>当前模式</h2>

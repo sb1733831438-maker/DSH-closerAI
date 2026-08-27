@@ -39,6 +39,9 @@ function main(): void {
   let quitting = false
   let trayCreated = false
   let hasBeenReady = false
+  /** Friendly message when the last system-sync boot failed (e.g. home owned
+   *  by another DSH). Cleared on a successful backend start. */
+  let systemSyncError: string | null = null
 
   const userData = app.getPath('userData')
   const providerStore = new ProviderStoreFile(join(userData, 'providers.json'))
@@ -207,10 +210,9 @@ function main(): void {
           '[closerai] system-sync boot failed:',
           bootError instanceof Error ? bootError.message : bootError,
         )
-        notify(
-          'CloserAI — 无法启动系统 DSH',
-          describeDshStartFailure(bootError) ?? 'DSH 启动失败，请查看诊断信息后重试。',
-        )
+        systemSyncError =
+          describeDshStartFailure(bootError) ?? 'DSH 启动失败，请查看诊断信息后重试。'
+        notify('CloserAI — 无法启动系统 DSH', systemSyncError)
         return
       }
     } else {
@@ -233,6 +235,7 @@ function main(): void {
     }
     if (running === null) return
     backend = running
+    systemSyncError = null
 
     running.dsh.supervisor.on('ready', (status) => {
       if (hasBeenReady) {
@@ -410,6 +413,10 @@ function main(): void {
         void startBackendForActiveProfile()
       },
       dshMode,
+      systemSyncError: () => systemSyncError,
+      retryBackend: () => {
+        void startBackendForActiveProfile()
+      },
       updateController,
     })
 

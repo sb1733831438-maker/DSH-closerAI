@@ -95,6 +95,12 @@ export interface AppState {
   backendUrl: string | null
   /** DSH home mode: system-sync (shared ~/.dsh) or managed (isolated). */
   dshMode: 'system-sync' | 'managed'
+  /**
+   * Non-null when the last system-sync boot failed (e.g. the ~/.dsh home is
+   * owned by another running DSH like the web DSH). Shown as a prominent
+   * recovery card so the user knows why DSH did not start and what to do.
+   */
+  systemSyncError: string | null
 }
 
 /** Per-mode capability toggles applied when installing the agent presets. */

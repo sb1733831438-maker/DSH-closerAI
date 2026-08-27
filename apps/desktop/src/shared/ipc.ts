@@ -46,6 +46,7 @@ export const IPC = {
   launchAtLoginSet: 'app:launch-at-login:set',
   updateCheck: 'update:check',
   updateInstall: 'update:install',
+  backendRetry: 'backend:retry',
   mcpList: 'mcp:list',
   mcpAdd: 'mcp:add',
   mcpUpdate: 'mcp:update',
@@ -111,6 +112,7 @@ export interface CloserAiBridge {
   setLaunchAtLogin(enabled: boolean): Promise<OpResult>
   checkForUpdates(): Promise<UpdateStatus>
   installUpdate(): Promise<UpdateStatus>
+  retryBackend(): Promise<{ ok: boolean }>
   listMcpServers(): Promise<McpServer[]>
   addMcpServer(input: SaveMcpServerInput): Promise<OpResult & { server?: McpServer }>
   updateMcpServer(input: UpdateMcpServerInput): Promise<OpResult>
@@ -157,6 +159,7 @@ export const BRIDGE_METHODS: readonly string[] = [
   'setLaunchAtLogin',
   'checkForUpdates',
   'installUpdate',
+  'retryBackend',
   'listMcpServers',
   'addMcpServer',
   'updateMcpServer',

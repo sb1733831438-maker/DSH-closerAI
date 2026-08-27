@@ -65,6 +65,14 @@ export interface IpcDeps {
   setLaunchAtLogin: (enabled: boolean) => void
   /** DSH home mode surfaced to the shell UI (sync banner). */
   dshMode: 'system-sync' | 'managed'
+  /**
+   * Friendly message when the last system-sync boot failed (e.g. the ~/.dsh
+   * home is owned by another DSH), or null when the backend is up / not in
+   * sync mode. Surfaced in the manage page recovery card.
+   */
+  systemSyncError: () => string | null
+  /** Re-run the backend start (used by the recovery card retry button). */
+  retryBackend: () => void
   /** Auto-update controller (electron-updater wrapper). */
   updateController: UpdateController
   /** CloserAI-managed MCP server registry (userData). */
@@ -279,7 +287,12 @@ export function registerIpcHandlers(deps: IpcDeps): void {
       launchAtLogin: deps.getLaunchAtLogin(),
       backendUrl: deps.backendUrl(),
       dshMode: deps.dshMode,
+      systemSyncError: deps.systemSyncError(),
     }
+  })
+  handleTrusted(IPC.backendRetry, () => {
+    deps.retryBackend()
+    return { ok: true }
   })
   handleTrusted(IPC.navChat, () => {
     deps.showChat()
