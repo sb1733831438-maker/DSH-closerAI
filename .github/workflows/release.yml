@@ -83,9 +83,14 @@ jobs:
         shell: pwsh
         timeout-minutes: 10
         run: |
-          & "apps\desktop\release\win-unpacked\CloserAI.exe" --smoke-test
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "packaged smoke failed with exit $LASTEXITCODE"
+          # CloserAI.exe is a GUI-subsystem app: `&` returns immediately and
+          # never sets $LASTEXITCODE. Start-Process -Wait blocks and captures
+          # the real exit code (the smoke path calls app.exit(0|1)).
+          $proc = Start-Process -FilePath `
+            "apps\desktop\release\win-unpacked\CloserAI.exe" `
+            -ArgumentList "--smoke-test" -Wait -PassThru
+          if ($proc.ExitCode -ne 0) {
+            Write-Error "packaged smoke failed with exit $($proc.ExitCode)"
             exit 1
           }
           Write-Host "packaged smoke passed (exit 0)"
@@ -176,8 +181,8 @@ jobs:
       - name: Package ${{ matrix.platform }} installer
         shell: bash
         run: |
-          export CLOSERAI_RUNTIME_NODE_MODULES= \
-            "$GITHUB_WORKSPACE/runtime-flat/node_modules"
+          RUNTIME_NODE_MODULES="$GITHUB_WORKSPACE/runtime-flat/node_modules"
+          export CLOSERAI_RUNTIME_NODE_MODULES="$RUNTIME_NODE_MODULES"
           pnpm --filter @closerai/desktop run ${{ matrix.script }}
 
       # Fail loudly: each required packaged path must exist, else the job
