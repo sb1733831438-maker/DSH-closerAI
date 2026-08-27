@@ -144,6 +144,19 @@ function main(): void {
     setTarget({ kind: 'file', path: onboardingPath })
   }
 
+  /**
+   * Smoke-test exit: guarantee the process terminates even if backend cleanup
+   * stalls in the packaged app. A hard-exit timer is armed first, then the
+   * backend is stopped; the normal path clears the timer and exits cleanly.
+   */
+  const finishSmoke = (ok: boolean): void => {
+    const hardExit = setTimeout(() => app.exit(ok ? 0 : 1), 5000)
+    void stopBackend().finally(() => {
+      clearTimeout(hardExit)
+      app.exit(ok ? 0 : 1)
+    })
+  }
+
   // Serialize backend (re)starts: every mode change / project activation /
   // onboarding-complete triggers one, and concurrent calls must never spawn
   // two DSH instances or race stopBackend() against launchBackend() (R-02).
@@ -253,8 +266,7 @@ function main(): void {
         )
         const chatOk = typeof rootChildren === 'number' && rootChildren > 0
         if (!chatOk) {
-          await stopBackend()
-          app.exit(1)
+          finishSmoke(false)
           return
         }
         // v0.0.5: the management (workspace & history) page must also mount.
@@ -286,18 +298,15 @@ function main(): void {
           )
           const manageOk =
             typeof manageChildren === 'number' && manageChildren > 0 && manageHasContent === true
-          await stopBackend()
-          app.exit(manageOk ? 0 : 1)
+          finishSmoke(manageOk)
         } catch (error) {
           console.error('[closerai] smoke: manage page failed:', error)
-          await stopBackend()
-          app.exit(1)
+          finishSmoke(false)
         }
       })
       window!.webContents.once('did-fail-load', async (_event, code, description) => {
         console.error('[closerai] smoke: failed to load (' + code + ') ' + description)
-        await stopBackend()
-        app.exit(1)
+        finishSmoke(false)
       })
     }
   }

@@ -186,19 +186,20 @@ jobs:
           pnpm --filter @closerai/desktop run ${{ matrix.script }}
 
       # Fail loudly: each required packaged path must exist, else the job
-      # fails instead of silently releasing a broken artifact (R-23).
+      # fails instead of silently releasing a broken artifact (R-23). -ipath is
+      # case-insensitive so mac's Contents/Resources/app matches.
       - name: Verify packaged DSH runtime is complete
         shell: bash
         run: |
           set -euo pipefail
           dsh_dir=$(find apps/desktop/release \
-            -path '*resources/app/node_modules/@deepseek-ai/dsh/lib' \
+            -ipath '*Resources/app/node_modules/@deepseek-ai/dsh/lib' \
             -type d | head -1)
           if [ -z "$dsh_dir" ]; then
             echo "dsh runtime MISSING"; exit 1
           fi
           closerai_dir=$(find apps/desktop/release \
-            -path '*resources/app/node_modules/@closerai' \
+            -ipath '*Resources/app/node_modules/@closerai' \
             -type d | head -1)
           if [ -z "$closerai_dir" ]; then
             echo "@closerai packages MISSING"; exit 1
